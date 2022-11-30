@@ -1,11 +1,15 @@
-from gym.envs.registration import register
+from ReplenishmentEnv.env.replenishment_env import ReplenishmentEnv
+from ReplenishmentEnv.wrapper.default_wrapper import DefaultWrapper
 import os
-config_dir = os.path.join(os.path.split(os.path.realpath(__file__))[0], "config")
-for config_name in os.listdir(config_dir):
-    env_name = os.path.splitext(config_name)[0]
-    register(
-        id="{0}-v0".format(env_name),
-        entry_point="ReplenishmentEnv.env:ReplenishmentEnv",
-        disable_env_checker=True,
-        kwargs={"config_path": os.path.join(config_dir, config_name)}
-    )
+
+all = ["make_env"]
+def make_env(config_name, wrapper_name="DefaultWrapper"):
+    config_dir = os.path.join(os.path.split(os.path.realpath(__file__))[0], "config")
+    config_file = os.path.join(config_dir, config_name + ".yml")
+    env = ReplenishmentEnv(config_file)
+
+    if wrapper_name == "DefaultWrapper":
+        env = DefaultWrapper(env)
+    else:
+        raise NotImplementedError
+    return env

@@ -1,15 +1,11 @@
-# TODO: a superset config yaml including all items for env 
-# Each item's function should be explained.
-# Format for each sku info file should be explained.
-# Use * to represent necessary item
-
-
 env:
   start_date: 2011/01/01
   end_date: 2011/12/31
-  history_len: 21
-  integerization_sku: False
-  backlog_ratio: 0.01
+  horizon: 100
+  lookback_len: 21
+  integerization_sku: True
+  storage_capacity: 5000
+  initial_balance: 0
 
 sku:
   sku_list: ReplenishmentEnv/data/sku58/sku58.sku_list.csv
@@ -18,25 +14,26 @@ sku:
       file: ReplenishmentEnv/data/sku58/sku58.demand.csv
   static_info: ReplenishmentEnv/data/sku58/sku58.info.csv
   shared_info:
-    order_cost: 100
+    order_cost: 10
     volume: 1
+    storage_cost: 0.0025
+    holding_cost_ratio: 0.00002
 
-store:
-  storage_capacity: 3000000
-  unit_storage_cost: 1
+profit:
+  profit_function: reward2
+  backlog_ratio: 0
+  excess_ratio: 0.5
 
-balance:
-  initial_balance: 100000
-  balance_function: reward2
 
 reward:
-  reward_function: reward2
+  mode: same_as_profit
 
 action:
-  mode: discrete
-  space: [
-    0.00, 0.16, 0.33, 0.40, 0.45, 0.50, 0.55, 0.60, 0.66, 0.83, 
-    1.00, 1.16, 1.33, 1.50, 1.66, 1.83, 2.00, 2.16, 2.33, 2.50, 
-    2.66, 2.83, 3.00, 3.16, 3.33, 3.50, 3.66, 3.83, 4.00, 5.00, 
-    6.00, 7.00, 9.00, 12.00
-  ]
+  mode: demand_mean_continuous
+
+output_state:
+  current_state:
+    [selling_price, procurement_cost, vlt, volume, 
+    order_cost, replenish, excess, in_stock, in_transit]
+  lookback_state:
+    [demand]

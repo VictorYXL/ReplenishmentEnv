@@ -29,15 +29,14 @@ python setup.py install
 - Run example
 ```
 import random
-import gym
-import ReplenishmentEnv
+from ReplenishmentEnv import make_env
 
-env = gym.make("sku58-v0")
+env = make_env("sku58")
 env.reset()
 for i in range(10):
     action_list = [int(random.random() * 10) for i in range(58)]
-    states, rewards, dones, info_states = env.step(action_list) 
-print(info_states["balance"])
+    states, rewards, done, infos = env.step(action_list) 
+print(infos["balance"])
 ```
 
 ## Run example without installation

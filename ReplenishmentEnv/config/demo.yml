@@ -1,4 +1,74 @@
-# TODO: a superset config yaml including all items for env 
-# Each item's function should be explained.
-# Format for each sku info file should be explained.
-# Use * to represent necessary item
+# Demo config to show the structure
+# items with * are necessary.
+
+# * Whole env setting
+env:
+  start_date: 2011/01/01    # * Start date for whole env setting.
+  end_date: 2011/12/31      # * End date for whole env setting.
+  horizon: 100              # Horizon for random sample after reset. Default is 100.
+  lookback_len: 21          # Look back length setting in env.
+  integerization_sku: True  # Whether to integerization sku in sell and replenishment. Default is False.
+  storage_capacity: 5000    # * Whole capacity for env. 
+  initial_balance: 0        # Initial balance. Default is 0
+
+# * sku setting
+sku:
+  # * Sku list for env.
+  # sku_list in list are also supported like [SKU0, SKU1, SKU2]
+  # sku_list file should start with SKU
+  sku_list:                 
+      ReplenishmentEnv/data/sku58/sku58.sku_list.csv 
+  # Dynamic info that will changed every day. 
+  # Each item is interpreted by a single file with columns "Date,SKU0,SKU1,SKU2,..."
+  dynamic_info:     
+    - name: demand
+      file: ReplenishmentEnv/data/sku58/sku58.demand.csv
+  # Static info that are different between skus and will not changed every day.
+  # All items are interpreted by a singl file with columns "SKU,item1,item2,..."
+  static_info: ReplenishmentEnv/data/sku58/sku58.info.csv
+  # Shared info that all skus has the same value for some feature and will not changed.
+  shared_info:
+    order_cost: 10
+    volume: 1
+    storage_cost: 0.0025
+    holding_cost_ratio: 0.00002
+  # Necessary feature for skus include:
+  # demand, selling_price, procurement_cost, init_stock, vlt, order_cost, 
+  # volume, storage_cost and holding_cost_ratio
+
+# * profit setting. profit is internal in env.
+# Currently, reward1 and reward2 are supported. backlog_ratio and excess_ratio are needed/
+profit:
+  profit_function: reward2
+  backlog_ratio: 0
+  excess_ratio: 0.5
+
+# * reward setting. reward will be passes to agents.
+# If reward has the same formart with profit, just use "same_as_profit", or 
+reward:
+  mode: same_as_profit
+
+# * action setting. Currently, 4 mode for action are supported:
+# continuous:             replenishment_quantity = action
+# discrete:               replenishment_quantity = action_space[action]
+# demand_mean_continuous: replenishment = action * demand_mean
+# demand_mean_discrete:   replenishment = action_space[action] * demand_mean
+action:
+  mode: demand_mean_discrete
+  action_space: [
+      0.00, 0.16, 0.33, 0.40, 0.45, 0.50, 0.55, 0.60, 0.66, 0.83, 
+      1.00, 1.16, 1.33, 1.50, 1.66, 1.83, 2.00, 2.16, 2.33, 2.50, 
+      2.66, 2.83, 3.00, 3.16, 3.33, 3.50, 3.66, 3.83, 4.00, 5.00, 
+      6.00, 7.00, 9.00, 12.00
+    ]
+
+# * Output state for agents. 
+# States will be passed as N * M matrix. 
+# M is state count and N is agent count(current_state + lookback_state * lookback_length)
+# TODO: This may be removed in next version and output states are passed by wrapper.
+output_state:
+  current_state:
+    [selling_price, procurement_cost, vlt, volume, 
+    order_cost, replenish, excess, in_stock, in_transit]
+  lookback_state:
+    [demand]
