@@ -6,6 +6,7 @@ env:
   integerization_sku: True
   storage_capacity: 5000
   initial_balance: 0
+  warmup: replenish_by_last_demand
 
 sku:
   sku_list: ReplenishmentEnv/data/sku58/sku58.sku_list.csv
@@ -23,7 +24,6 @@ profit:
   profit_function: reward2
   backlog_ratio: 0
   excess_ratio: 0.5
-
 
 reward:
   mode: same_as_profit

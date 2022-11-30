@@ -1,13 +1,14 @@
 # Normal sku 500 task with common setting.
 # All skus are selected from sku2307 with minimum fluctuation demand.
 env:
-  start_date: 2018/7/1
+  start_date: 2018/8/1
   end_date: 2021/10/30
   horizon: 100
   lookback_len: 21
   integerization_sku: True
   storage_capacity: 50000
   initial_balance: 0
+  warmup: replenish_by_last_demand
 
 sku:
   sku_list: ReplenishmentEnv/data/sku2778/sku500.smooth_demand.sku_list.csv
@@ -29,7 +30,6 @@ profit:
   profit_function: reward2
   backlog_ratio: 0
   excess_ratio: 0.5
-
 
 reward:
   mode: same_as_profit

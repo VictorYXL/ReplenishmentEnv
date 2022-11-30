@@ -20,7 +20,7 @@ class DefaultWrapper(gym.Wrapper):
         return mean_demand
     
     def get_in_stock(self) -> np.array:
-        return self.agent_states["in_stock"]
+        return self.agent_states["in_stock"].copy()
 
     def get_in_transit(self) -> np.array:
-        return self.agent_states["in_transit"]
+        return self.agent_states["in_transit"].copy()

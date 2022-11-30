@@ -30,6 +30,15 @@ class AgentStates(object):
         self.states_items = self.get_state_items()
         self.inherited_states_items = self.get_inherited_items()
 
+        # Look back len in date's look back mode.
+        self.lookback_len = lookback_len
+
+        # Step tick. Due to warmup, step starts from -lookback_len.
+        self.current_step = -self.lookback_len
+
+        # Durations length.
+        self.durations = durations
+    
         # Agent id to index dict.
         self.agent_id_to_index = {agent_id: index for index, agent_id in enumerate(self.agent_ids)}
 
@@ -37,16 +46,7 @@ class AgentStates(object):
         self.states_to_index = {state: index for index, state in enumerate(self.states_items)}
     
         # M * D * N: N , M state item count, D dates count, N agent count
-        self.states = np.zeros((len(self.states_items), durations, self.agents_count))
-        
-        # Step tick.
-        self.current_step = 0
-
-        # Look back len in date's look back mode.
-        self.lookback_len = lookback_len
-
-        # Durations length.
-        self.durations = durations
+        self.states = np.zeros((len(self.states_items), self.durations + self.lookback_len, self.agents_count))
 
         # Init the state in order as: dynamic state, static_state, shared_state and default value
         for item in self.states_items:
@@ -83,7 +83,6 @@ class AgentStates(object):
             "replenish",          # Replenish amount in current step for each sku
             "excess",             # Excess amount for each sku after sales
             "in_transit",         # Sku amount in transit 
-            "excess",             # Amount that sku exceeded the capacity for storage
         ]
         return states_items
     
@@ -97,7 +96,7 @@ class AgentStates(object):
         ]
         return states_items
 
-    # index = [state, sku, date].
+    # index = [state, date, sku].
     # state is needed.
     def __getitem__(self, index):
         if isinstance(index, str):
@@ -113,23 +112,28 @@ class AgentStates(object):
             date = index[1]
             agent_id = index[2]
 
+        # Due to warmup, date_index = current_step + lookback_len
+        date_index = self.current_step + self.lookback_len
         if date == "today":
-            date = self.current_step
+            date = date_index
         elif date == "history":
-            date = slice(None, self.current_step, None)
+            date = slice(None, date_index, None)
         elif date == "history_with_current":
-            date = slice(None, self.current_step + 1, None)
+            date = slice(None, date_index + 1, None)
         elif date == "lookback":
-            date = slice(max(self.current_step - self.lookback_len, 0), self.current_step, None)
+            date = slice(max(date_index - self.lookback_len, 0), date_index, None)
         elif date == "lookback_with_current":
-            date = slice(max(self.current_step - self.lookback_len + 1, 0), self.current_step + 1, None)
+            date = slice(max(date_index - self.lookback_len + 1, 0), date_index + 1, None)
         elif date == "all_dates":
             date = slice(None, None, None)
 
+        if isinstance(date, int):
+            assert(date >= 0 and date < self.durations + self.lookback_len)
 
         if agent_id == "all_agents":
             agent_index = slice(None, None, None)
         else:
+            assert(agent_id in self.agent_id_to_index)
             agent_index = self.agent_id_to_index[agent_id]
 
         if state_item in self.states_items:
@@ -140,7 +144,7 @@ class AgentStates(object):
         else:
             raise NotImplementedError
 
-    # index = [state, sku, date].
+    # index = [state, date, sku].
     # state is needed.
     def __setitem__(self, index, value):
         if isinstance(index, str):
@@ -156,22 +160,28 @@ class AgentStates(object):
             date = index[1]
             agent_id = index[2]
 
+        # Due to warmup, date_index = current_step + lookback_len
+        date_index = self.current_step + self.lookback_len
         if date == "today":
-            date = self.current_step
+            date = date_index
         elif date == "history":
-            date = slice(None, self.current_step, None)
+            date = slice(None, date_index, None)
         elif date == "history_with_current":
-            date = slice(None, self.current_step + 1, None)
+            date = slice(None, date_index + 1, None)
         elif date == "lookback":
-            date = slice(self.current_step - self.lookback_len, self.current_step, None)
+            date = slice(max(date_index - self.lookback_len, 0), date_index, None)
         elif date == "lookback_with_current":
-            date = slice(self.current_step - self.lookback_len, self.current_step + 1, None)
+            date = slice(max(date_index - self.lookback_len + 1, 0), date_index + 1, None)
         elif date == "all_dates":
             date = slice(None, None, None)
+
+        if isinstance(date, int):
+            assert(date >= 0 and date < self.durations + self.lookback_len)
 
         if agent_id == "all_agents":
             agent_index = slice(None, None, None)
         else:
+            assert(agent_id in self.agent_id_to_index)
             agent_index = self.agent_id_to_index[agent_id]
             
         if state_item in self.states_items:
@@ -200,7 +210,7 @@ class AgentStates(object):
         # First date
         first_value = static_info.get("init_stock", 0).to_numpy().reshape(1, -1)
         # Rest dates
-        rest_value = (np.ones((self.durations - 1, self.agents_count)) * np.nan)
+        rest_value = (np.ones((self.durations + self.lookback_len - 1, self.agents_count)) * np.nan)
         value = np.concatenate([first_value, rest_value])
         return value
     
@@ -210,12 +220,11 @@ class AgentStates(object):
             shared_info: dict=None) -> np.array:
         return 0
     
-    # Ouput M * N matrix: M is state count and N is agent count
+    # Output M * N matrix: M is state count and N is agent count
     def snapshot(self, current_state_items, lookback_state_items):
-        states_list = [self.__getitem__(item).reshape(1, self.agents_count) for item in current_state_items]
+        states_list = [self.__getitem__(item).reshape(1, self.agents_count).copy() for item in current_state_items]
         for item in lookback_state_items:
-            state = np.zeros((self.lookback_len, self.agents_count))
-            state[-self.current_step-1:] = self.__getitem__([item, "lookback_with_current"])
+            state = self.__getitem__([item, "lookback_with_current"]).copy()
             states_list.append(state)
         states = np.concatenate(states_list)
         return states

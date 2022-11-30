@@ -6,9 +6,9 @@ import pandas as pd
 import random
 import yaml
 
-
 from ReplenishmentEnv.utility.data_loader import DataLoader
 from ReplenishmentEnv.env.reward_function.rewards import reward1, reward2
+from ReplenishmentEnv.env.warmup_function.warmup import replenish_by_last_demand
 from ReplenishmentEnv.env.agent_states import AgentStates
 
 class ReplenishmentEnv(Env):
@@ -16,6 +16,7 @@ class ReplenishmentEnv(Env):
         # Config loaded from yaml file
         self.config: dict = None
 
+        # All following variables will be refresh in init_env function
         # Sku list from config file
         self.sku_list: list = None
 
@@ -130,19 +131,19 @@ class ReplenishmentEnv(Env):
                 datetime.strftime(pd.to_datetime(date), "%Y/%m/%d"): date
                 for date in dynamic_value.index
             }
-            self.durations = (self.picked_end_date - self.picked_start_date).days + 1
             self.date_to_index = {}
-            for date_index, date in enumerate(pd.date_range(self.picked_start_date, self.picked_end_date)):
+            # For warmup, start date forwards lookback_len
+            for step, date in enumerate(pd.date_range(self.picked_start_date - timedelta(self.lookback_len), self.picked_end_date)):
                 date_str = datetime.strftime(date, "%Y/%m/%d")
                 # Check the target date in saved in demands file
                 assert(date_str in dates_format_dic.keys())
                 # Convert the actual date to date index
-                self.date_to_index[dates_format_dic[date_str]] = date_index
+                self.date_to_index[dates_format_dic[date_str]] = step - self.lookback_len
             dynamic_value.rename(index=self.date_to_index, inplace=True)
             # Remove useless date and sku
             dynamic_value = dynamic_value.loc[self.date_to_index.values()]
             dynamic_value = dynamic_value[self.sku_list]
-            self.dynamic_info[item] = dynamic_value
+            self.dynamic_info[item] = dynamic_value.sort_values(by="Date")
 
     """
         Update the self.config by update_config
@@ -152,21 +153,17 @@ class ReplenishmentEnv(Env):
         To avoid the obfuscation, update_config is needed when reset with update
     """
     def reset(self, random_interception:bool = True) -> None:
-        self.init_env()
-        if random_interception:
-            self.picked_start_date, self.picked_end_date = self.interception()
-        else:
-            self.picked_start_date, self.picked_end_date = self.start_date, self.end_date
-             
-
+        self.init_env(random_interception)
+        
         self.init_data()
         self.init_state()
         self.init_monitor()
 
+        eval(format(self.warmup_function))(self)
         states = self.get_state()
         return states  
     
-    def init_env(self) -> None:
+    def init_env(self, random_interception=False) -> None:
         self.sku_list = self.config["sku"]["sku_list"]
         self.balance = self.config["env"].get("initial_balance", 0)
         self.storage_capacity = self.config["env"].get("storage_capacity", 0)
@@ -177,7 +174,9 @@ class ReplenishmentEnv(Env):
         self.action_mode = self.config["action"].get("mode", "continuous")
         self.start_date = pd.to_datetime(self.config["env"]["start_date"])
         self.end_date = pd.to_datetime(self.config["env"]["end_date"])
-        self.current_step = 0
+        self.warmup_function = self.config["env"].get("warmup", "replenish_by_last_demand")
+        # Step tick. Due to warmup, step starts from -self.lookback_len.
+        self.current_step = -self.lookback_len
 
         self.action_space = spaces.Box(
             low=0, high=np.inf, 
@@ -190,6 +189,12 @@ class ReplenishmentEnv(Env):
             shape=(output_length, len(self.sku_list)),
             dtype=np.float32
         )
+
+        if random_interception:
+            self.picked_start_date, self.picked_end_date = self.interception()
+        else:
+            self.picked_start_date, self.picked_end_date = self.start_date, self.end_date
+        self.durations = (self.picked_end_date - self.picked_start_date).days + 1
 
     def interception(self) -> tuple[datetime, datetime]:
         horizon = self.config["env"].get("horizon", 100)
@@ -254,7 +259,7 @@ class ReplenishmentEnv(Env):
     """
     def receive_sku(self) -> None:
         # calculate all arrived amount
-        date_index = np.array(range(0, self.current_step, 1)).reshape(-1, 1)
+        date_index = np.array(range(-self.lookback_len, self.current_step, 1)).reshape(-1, 1)
         arrived_flag = np.where((self.agent_states["vlt", "history"] + date_index) == self.current_step, 1, 0)
         # Arrived for each sku
         arrived = np.sum(arrived_flag * self.agent_states["replenish", "history"], axis=0)  
@@ -277,6 +282,7 @@ class ReplenishmentEnv(Env):
     """
     def replenish(self, actions) -> None:
         action_mode = self.config["action"]["mode"]
+
         if self.action_mode == "continuous":
             replenish_amount = actions
         elif self.action_mode == "discrete":
@@ -284,18 +290,10 @@ class ReplenishmentEnv(Env):
             action_space = np.array(self.config["action"]["space"])
             replenish_amount = np.round(action_space[actions])
         elif self.action_mode == "demand_mean_continuous":
-            # TODO: work around. Need to process look back.
-            if self.current_step == 0:
-                history_demand_mean = self.agent_states["demand"]
-            else:
-                history_demand_mean = np.average(self.agent_states["demand", "lookback"], 0)
+            history_demand_mean = np.average(self.agent_states["demand", "lookback"], 0)
             replenish_amount = actions * history_demand_mean
         elif self.action_mode == "demand_mean_discrete":
-            # TODO: work around. Need to process look back.
-            if self.current_step == 0:
-                history_demand_mean = self.agent_states["demand"]
-            else:
-                history_demand_mean = np.average(self.agent_states["demand", "lookback"], 0)
+            history_demand_mean = np.average(self.agent_states["demand", "lookback"], 0)
             assert("space" in self.config["action"])
             action_space = np.array(self.config["action"]["space"])
             replenish_amount = action_space[actions] * history_demand_mean
@@ -317,7 +315,7 @@ class ReplenishmentEnv(Env):
         rewards = eval(reward_info["reward_function"])(self.agent_states, reward_info)
         return rewards
 
-    # Ouput M * N matrix: M is state count and N is agent count
+    # Output M * N matrix: M is state count and N is agent count
     def get_state(self) -> dict:
         states = self.agent_states.snapshot(self.current_output_state, self.lookback_output_state)
         return states
@@ -328,7 +326,6 @@ class ReplenishmentEnv(Env):
             "balance": self.balance
         }
         return info
-
     
     def next_step(self) -> None:
         self.current_step += 1
