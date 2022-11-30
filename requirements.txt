@@ -1,0 +1,5 @@
+gym>=0.26.0
+numpy>=1.20.0
+pandas==1.4.4
+setuptools==65.3.0
+pyaml==21.10.1
