@@ -3,25 +3,34 @@
 
 # * Whole env setting
 env:
-  start_date: 2011/01/01            # * Start date for whole env setting.
-  end_date: 2011/12/31              # * End date for whole env setting.
+  mode:
+    - name: train                   # * mode name
+      start_date: 2011/01/01        # * Start date for train mode.
+      end_date: 2011/10/31          # * End date for train mode.
+      random_interception: True     # Flag to random interception subset with horizon length. Default is False.
+    - name: validation
+      start_date: 2011/11/01
+      end_date  : 2011/11/30
+    - name: test
+      start_date: 2011/12/01
+      end_date  : 2011/12/31
   horizon: 100                      # Horizon for random sample after reset. Default is 100.
   lookback_len: 21                  # Look back length setting in env.
   integerization_sku: True          # Whether to integerization sku in sell and replenishment. Default is False.
   storage_capacity: 5000            # * Whole capacity for env. 
   initial_balance: 0                # Initial balance. Default is 0
-  warmup: replenish_by_last_demand  # Warmup function. Warmup length is lookback_len. 
+  warmup: replenish_by_last_demand  # Warmup lookback_len dates before start_date.
 
 # * sku setting
 sku:
   # * Sku list for env.
   # sku_list in list are also supported like [SKU0, SKU1, SKU2]
   # sku_list file should start with SKU
-  sku_list:                 
+  sku_list:
       ReplenishmentEnv/data/sku58/sku58.sku_list.csv 
   # Dynamic info that will changed every day. 
   # Each item is interpreted by a single file with columns "Date,SKU0,SKU1,SKU2,..."
-  dynamic_info:     
+  dynamic_info:
     - name: demand
       file: ReplenishmentEnv/data/sku58/sku58.demand.csv
   # Static info that are different between skus and will not changed every day.
@@ -56,7 +65,7 @@ reward:
 # demand_mean_discrete:   replenishment = action_space[action] * demand_mean
 action:
   mode: demand_mean_discrete
-  action_space: [
+  space: [
       0.00, 0.16, 0.33, 0.40, 0.45, 0.50, 0.55, 0.60, 0.66, 0.83, 
       1.00, 1.16, 1.33, 1.50, 1.66, 1.83, 2.00, 2.16, 2.33, 2.50, 
       2.66, 2.83, 3.00, 3.16, 3.33, 3.50, 3.66, 3.83, 4.00, 5.00, 

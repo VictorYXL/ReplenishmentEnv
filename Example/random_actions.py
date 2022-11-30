@@ -6,7 +6,7 @@ sys.path.insert(0, env_dir)
 from ReplenishmentEnv import make_env
 
 if __name__ == "__main__":
-    env = make_env("sku58")
+    env = make_env("sku58", wrapper_name = "ObservationWrapper", mode="test")
     env.reset()
     for i in range(10):
         action_list = [int(random.random() * 10) for i in range(58)]

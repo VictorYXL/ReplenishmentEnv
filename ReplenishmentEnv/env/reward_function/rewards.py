@@ -1,3 +1,4 @@
+from typing import Tuple
 import numpy as np
 
 from ReplenishmentEnv.env.agent_states import AgentStates
@@ -8,7 +9,7 @@ from ReplenishmentEnv.env.agent_states import AgentStates
     profit_info: env state. For reward1, following keys are needed:
         - backlog_ratio: backlog = (selling_price - procurement_cost) * (cur_demand - sale) * backlog_ratio
 """
-def reward1(agent_states: AgentStates, profit_info: dict) -> np.array:
+def reward1(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dict]:
     selling_price      = agent_states["selling_price"]
     procurement_cost   = agent_states["procurement_cost"]
     sale               = agent_states["sale"]
@@ -28,7 +29,15 @@ def reward1(agent_states: AgentStates, profit_info: dict) -> np.array:
     backlog      = (selling_price - procurement_cost) * (current_demand - sale) * backlog_ratio
 
     reward       = income - outcome - order_cost - holding_cost - backlog
-    return reward
+    reward_info = {
+        "income":       income,
+        "outcome":      outcome,
+        "order_cost":   order_cost,
+        "holding_cost": holding_cost,
+        "backlog":      backlog,
+    }
+
+    return reward, reward_info
 
 """
     reward2: calculate the cost when sale.
@@ -37,7 +46,7 @@ def reward1(agent_states: AgentStates, profit_info: dict) -> np.array:
         - backlog_ratio: backlog = (selling_price - procurement_cost) * (cur_demand - sale) * backlog_ratio
         - excess_ratio: Only excess_ratio of excess skus will cost loss in profit
 """
-def reward2(agent_states: AgentStates, profit_info: dict) -> np.array:
+def reward2(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dict]:
     selling_price      = agent_states["selling_price"]
     procurement_cost   = agent_states["procurement_cost"]
     sale               = agent_states["sale"]
@@ -59,4 +68,12 @@ def reward2(agent_states: AgentStates, profit_info: dict) -> np.array:
     backlog      = np.where(backlog > 0, backlog, 0)
 
     reward      = profit - excess - order_cost - holding_cost - backlog
-    return reward
+    reward_info = {
+        "profit":       profit,
+        "excess":       excess,
+        "order_cost":   order_cost,
+        "holding_cost": holding_cost,
+        "backlog":      backlog,
+    }
+
+    return reward, reward_info

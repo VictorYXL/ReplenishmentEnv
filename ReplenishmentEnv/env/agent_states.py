@@ -200,6 +200,9 @@ class AgentStates(object):
             for item in self.inherited_states_items:
                 self.__setitem__(item, self.__getitem__([item, "history"])[-1])
     
+    def pre_step(self):
+        self.current_step -= 1
+    
     """
         Init in_stock from init_stock
     """

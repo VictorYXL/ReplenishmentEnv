@@ -1,17 +1,26 @@
-# Normal sku 100 task with common setting.
-# All skus are selected from sku2307 with minimum fluctuation demand.
+# Normal 50 skus task with common setting.
+# All skus are selected from sku 2778 with selling_price >= procurement_cost * 1.05
 env:
-  start_date: 2018/8/1
-  end_date: 2021/10/30
+  mode:
+    - name: train
+      start_date: 2018/8/1
+      end_date: 2019/5/27
+      random_interception: True
+    - name: validation
+      start_date: 2019/5/28
+      end_date: 2019/9/4 
+    - name: test
+      start_date: 2019/9/5
+      end_date: 2019/12/14
   horizon: 100
   lookback_len: 21
   integerization_sku: True
-  storage_capacity: 10000
+  storage_capacity: 5000
   initial_balance: 0
   warmup: replenish_by_last_demand
 
 sku:
-  sku_list: ReplenishmentEnv/data/sku2778/sku100.smooth_demand.sku_list.csv
+  sku_list: ReplenishmentEnv/data/sku2778/sku50.smooth_demand.sku_list.csv
   dynamic_info: 
     - name: demand
       file: ReplenishmentEnv/data/sku2778/sku2778.demand.csv

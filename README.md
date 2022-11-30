@@ -51,7 +51,7 @@ git clone https://github.com/zhangchuheng123/ReplenishmentRL.git
     Only python >= 3.8.0 in tested.
     - Build by conda
     ```
-    conda env -n ReplenishmentEnv python==3.8.0 -f requirements.txt
+    conda create -n ReplenishmentEnv python=3.8.0 -f requirements.txt
     ```
     - Build by pip
     ```

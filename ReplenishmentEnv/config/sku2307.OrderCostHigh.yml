@@ -1,4 +1,5 @@
-# Normal 2307 skus task with common setting.
+# 2307 skus task with high order cost.
+# All skus are selected from sku 2778 with selling_price >= procurement_cost * 1.05
 env:
   mode:
     - name: train
@@ -14,12 +15,12 @@ env:
   horizon: 100
   lookback_len: 21
   integerization_sku: True
-  storage_capacity: 277800
+  storage_capacity: 230700
   initial_balance: 0
   warmup: replenish_by_last_demand
 
 sku:
-  sku_list: ReplenishmentEnv/data/sku2778/sku2778.sku_list.csv
+  sku_list: ReplenishmentEnv/data/sku2778/sku2307.sku_list.csv
   dynamic_info: 
     - name: demand
       file: ReplenishmentEnv/data/sku2778/sku2778.demand.csv
@@ -29,7 +30,7 @@ sku:
       file: ReplenishmentEnv/data/sku2778/sku2778.procurement_cost.csv
   static_info: ReplenishmentEnv/data/sku2778/sku2778.info.csv
   shared_info:
-    order_cost: 10
+    order_cost: 20
     volume: 1
     storage_cost: 0.0025
     holding_cost_ratio: 0.00002
