@@ -20,31 +20,53 @@ env:
   storage_capacity: 5000            # * Whole capacity for env. 
   initial_balance: 0                # Initial balance. Default is 0
   warmup: replenish_by_last_demand  # Warmup lookback_len dates before start_date.
-
-# * sku setting
-sku:
   # * Sku list for env.
   # sku_list in list are also supported like [SKU0, SKU1, SKU2]
   # sku_list file should start with SKU
-  sku_list:
-      ReplenishmentEnv/data/sku58/sku58.sku_list.csv 
-  # Dynamic info that will changed every day. 
-  # Each item is interpreted by a single file with columns "Date,SKU0,SKU1,SKU2,..."
-  dynamic_info:
-    - name: demand
-      file: ReplenishmentEnv/data/sku58/sku58.demand.csv
-  # Static info that are different between skus and will not changed every day.
-  # All items are interpreted by a singl file with columns "SKU,item1,item2,..."
-  static_info: ReplenishmentEnv/data/sku58/sku58.info.csv
-  # Shared info that all skus has the same value for some feature and will not changed.
-  shared_info:
-    order_cost: 10
-    volume: 1
-    storage_cost: 0.0025
-    holding_cost_ratio: 0.00002
-  # Necessary feature for skus include:
-  # demand, selling_price, procurement_cost, init_stock, vlt, order_cost, 
-  # volume, storage_cost and holding_cost_ratio
+  sku_list: ReplenishmentEnv/data/sku2778/sku50.sku_list.csv 
+
+# * Facility info
+facility:
+  - name: store1            # * Facility name
+    upstream: super_vender  # * Upstream for facility. Super_vendor can provide unlimited skus.
+    downstream: store2      # * Downstream for facility. Consumers represents the actual demand.
+    sku:
+      # Dynamic info that will changed every day. 
+      # Each item is interpreted by a single file with columns "Date,SKU0,SKU1,SKU2,..."
+      dynamic_info:
+        - name: procurement_cost
+          file: ReplenishmentEnv/data/sku2778/sku2778.super_vendor.selling_price.csv
+        - name: selling_price
+          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
+      # Static info that are different between skus and will not changed every day.
+      # All items are interpreted by a singl file with columns "SKU,item1,item2,..."
+      static_info: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
+      # Shared info that all skus has the same value for some feature and will not changed.
+      order_info:
+        order_cost: 10
+        volume: 1
+        storage_cost: 0.0025
+        holding_cost_ratio: 0.00002
+      # Necessary feature for skus include:
+      # demand, selling_price, procurement_cost, init_stock, vlt, order_cost, 
+      # volume, storage_cost and holding_cost_ratio
+  - name: store2
+    upstream: store1
+    downstream: consumer
+    sku:
+      dynamic_info:
+        - name: procurement_cost
+          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
+        - name: selling_price
+          file: ReplenishmentEnv/data/sku2778/sku2778.store2.selling_price.csv
+        - name: demand
+          file: ReplenishmentEnv/data/sku2778/sku2778.demand.csv
+      static_info: ReplenishmentEnv/data/sku2778/sku2778.store2.info.csv
+      order_info:
+        order_cost: 10
+        volume: 1
+        storage_cost: 0.0025
+        holding_cost_ratio: 0.00002
 
 # * profit setting. profit is internal in env.
 # Currently, reward1 and reward2 are supported. backlog_ratio and excess_ratio are needed/

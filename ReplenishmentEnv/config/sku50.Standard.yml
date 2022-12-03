@@ -1,5 +1,5 @@
-# Normal 50 skus task with common setting.
-# All skus are selected from sku 2778 with selling_price >= procurement_cost * 1.05
+# Normal sku 50 task with common setting.
+# All skus are selected from sku2307 with minimum fluctuation demand.
 env:
   mode:
     - name: train
@@ -18,22 +18,54 @@ env:
   storage_capacity: 5000
   initial_balance: 0
   warmup: replenish_by_last_demand
-
-sku:
   sku_list: ReplenishmentEnv/data/sku2778/sku50.smooth_demand.sku_list.csv
-  dynamic_info: 
-    - name: demand
-      file: ReplenishmentEnv/data/sku2778/sku2778.demand.csv
-    - name: selling_price
-      file: ReplenishmentEnv/data/sku2778/sku2778.selling_price.csv
-    - name: procurement_cost
-      file: ReplenishmentEnv/data/sku2778/sku2778.procurement_cost.csv
-  static_info: ReplenishmentEnv/data/sku2778/sku2778.info.csv
-  shared_info:
-    order_cost: 10
-    volume: 1
-    storage_cost: 0.0025
-    holding_cost_ratio: 0.00002
+
+facility:
+  - name: store1
+    upstream: super_vender
+    downstream: store2
+    sku:
+      dynamic_info:
+        - name: procurement_cost
+          file: ReplenishmentEnv/data/sku2778/sku2778.super_vendor.selling_price.csv
+        - name: selling_price
+          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
+      static_info: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
+      order_info:
+        order_cost: 10
+        volume: 1
+        storage_cost: 0.0025
+        holding_cost_ratio: 0.00002
+  - name: store2
+    upstream: store1
+    downstream: store3
+    sku:
+      dynamic_info:
+        - name: procurement_cost
+          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
+        - name: selling_price
+          file: ReplenishmentEnv/data/sku2778/sku2778.store2.selling_price.csv
+      static_info: ReplenishmentEnv/data/sku2778/sku2778.store2.info.csv
+      order_info:
+        order_cost: 10
+        volume: 1
+        storage_cost: 0.0025
+        holding_cost_ratio: 0.00002
+  - name: store3
+    upstream: store2
+    downstream: consumer
+    sku:
+      dynamic_info:
+        - name: procurement_cost
+          file: ReplenishmentEnv/data/sku2778/sku2778.store2.selling_price.csv
+        - name: selling_price
+          file: ReplenishmentEnv/data/sku2778/sku2778.store3.selling_price.csv
+      static_info: ReplenishmentEnv/data/sku2778/sku2778.store3.info.csv
+      order_info:
+        order_cost: 10
+        volume: 1
+        storage_cost: 0.0025
+        holding_cost_ratio: 0.00002
 
 profit:
   profit_function: reward2
