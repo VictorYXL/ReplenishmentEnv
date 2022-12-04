@@ -11,6 +11,7 @@ import yaml
 from ReplenishmentEnv.env.reward_function.rewards import reward1, reward2
 from ReplenishmentEnv.env.warmup_function.warmup import replenish_by_last_demand
 from ReplenishmentEnv.env.supply_chain import SupplyChain
+from ReplenishmentEnv.env.agent_states import AgentStates
 from ReplenishmentEnv.utility.utility import deep_update
 from ReplenishmentEnv.utility.data_loader import DataLoader
 
@@ -32,16 +33,19 @@ class ReplenishmentEnv(Env):
         # Look back information length
         self.lookback_len = 0
 
-        # 3 types of sku information which will be used in AgentStates init.
+        # All facilities' sku data are shored in total_data, indlcuing 3 types of sku information.
+        # self.total_data = [
+        #    {"shared_data": shared_data, "static_data": static_data, "dynamic_data": dynamic_data},
+        #    {"shared_data": shared_data, "static_data": static_data, "dynamic_data": dynamic_data},
+        #    ...
+        #]
         # Shared info saved shared information for all skus and all dates.
         # Stored as dict = {state item: value} 
-        self.shared_info: dict = None
         # Static info saved special information for each sku but will not changed.
         # Stored as N * M pd.DataFrame (N: agents_count, M: state item count)
-        self.static_info: pd.DataFrame = None
         # Dynamic info saved the information which is different between different skus and will change by date.
         # Demands info stored as dict = {state_item: N * D pd.DataFrame (N: agents_count, D: dates)}
-        self.dynamic_info: dict = None
+        self.total_data: list = None
 
         # Env balance
         self.balance = 0
@@ -75,46 +79,53 @@ class ReplenishmentEnv(Env):
     """
     def build_supply_chain(self) -> None:
         self.supply_chain = SupplyChain(self.config["facility"])
+        self.facilities_count = len(self.supply_chain.index_to_name)
     
     """
-        Load all stores' sku data, including shared, static and dynamic data.
+        Load all facilities' sku data, including shared, static and dynamic data.
         Only load only in __init__ function.
     """
     def load_data(self) -> None:
         self.total_data = []
         data_loader = DataLoader()
+
+        # Convert the sku list from file to list. 
+        if isinstance(self.config["env"]["sku_list"], str):
+            self.sku_list = data_loader.load_as_list(self.config["env"]["sku_list"])
+        else:
+            self.sku_list = self.config["env"]["sku_list"]
+
         for facility_config in self.config["facility"]:
             assert("sku" in facility_config)
             sku_config = facility_config["sku"]
 
             # Load shared info, which is shared for all skus and all dates.
             # Shared info is stored as dict = {state item: value}
-            store_shared_info = sku_config.get("shared_info", {})
+            facility_shared_data = sku_config.get("shared_data", {})
 
             # Load and check static sku info, which is special for each sku but will not changed.
             # Static info is stored as N * M pd.DataFrame (N: agents_count, M: state item count)
-            if "static_info" in sku_config:
-                store_static_info = data_loader.load_as_df(sku_config["static_info"])
+            if "static_data" in sku_config:
+                facility_static_data = data_loader.load_as_df(sku_config["static_data"])
             else:
-                store_static_info = np.zeros((len(self.agent_count), 0))
+                facility_static_data = np.zeros((len(self.sku_list), 0))
 
             # Load and check demands info, which is different between different skus and will change by date
             # Demands info stored as dict = {state_item: N * D pd.DataFrame (N: agents_count, D: dates)}
-            store_dynamic_info = {}
-            for dynamic_info_item in sku_config.get("dynamic_info", {}):
-                assert("name" in dynamic_info_item)
-                assert("file" in dynamic_info_item)
-                item = dynamic_info_item["name"]
-                file = dynamic_info_item["file"]
+            facility_dynamic_data = {}
+            for dynamic_data_item in sku_config.get("dynamic_data", {}):
+                assert("name" in dynamic_data_item)
+                assert("file" in dynamic_data_item)
+                item = dynamic_data_item["name"]
+                file = dynamic_data_item["file"]
                 dynamic_value = data_loader.load_as_matrix(file)
-                store_dynamic_info[item] = dynamic_value
+                facility_dynamic_data[item] = dynamic_value
 
             self.total_data.append({
-                "shared_info": store_shared_info, 
-                "static_info": store_static_info, 
-                "dynamic_info": store_dynamic_info
+                "shared_data": facility_shared_data, 
+                "static_data": facility_static_data, 
+                "dynamic_data": facility_dynamic_data
             })
-        pass
     
     """
         Init and transform the shared, static and dynamic data by:
@@ -125,38 +136,43 @@ class ReplenishmentEnv(Env):
         init_data will be called in reset function.
     """
     def init_data(self) -> None:
-        # Load shared info
-        self.shared_info = self.total_shared_info
+        self.picked_data = []
+        for data in self.total_data:
+            picked_facility_data = {}
 
-        # Load static info
-        self.static_info = self.total_static_info
-        assert(set(self.sku_list) <= set(list(self.static_info["SKU"].unique())))
-        # Remove useless sku
-        self.static_info = self.static_info[self.static_info["SKU"].isin(self.sku_list)]
+            # Load shared info
+            picked_facility_data["shared_data"] = data["shared_data"]
 
-        # Load and check demands info, which is different between different skus and will change by date
-        # Demands info stored as dict = {state_item: N * D pd.DataFrame (N: agents_count, D: dates)}
-        self.dynamic_info = {}
-        for item, ori_dynamic_value in self.total_dynamic_info.items():
-            dynamic_value = copy.deepcopy(ori_dynamic_value)
-            assert(set(self.sku_list) <= set(dynamic_value.columns.unique()))
-            dates_format_dic = {
-                datetime.strftime(pd.to_datetime(date), "%Y/%m/%d"): date
-                for date in dynamic_value.index
-            }
-            self.date_to_index = {}
-            # For warmup, start date forwards lookback_len
-            for step, date in enumerate(pd.date_range(self.picked_start_date - timedelta(self.lookback_len), self.picked_end_date)):
-                date_str = datetime.strftime(date, "%Y/%m/%d")
-                # Check the target date in saved in demands file
-                assert(date_str in dates_format_dic.keys())
-                # Convert the actual date to date index
-                self.date_to_index[dates_format_dic[date_str]] = step - self.lookback_len
-            dynamic_value.rename(index=self.date_to_index, inplace=True)
-            # Remove useless date and sku
-            dynamic_value = dynamic_value.loc[self.date_to_index.values()]
-            dynamic_value = dynamic_value[self.sku_list]
-            self.dynamic_info[item] = dynamic_value.sort_values(by="Date")
+            # Load static info
+            picked_facility_data["static_data"] = data["static_data"]
+            assert(set(self.sku_list) <= set(list(data["static_data"]["SKU"].unique())))
+            # Remove useless sku
+            picked_facility_data["static_data"] = data["static_data"][data["static_data"]["SKU"].isin(self.sku_list)]
+
+            # Load and check demands info, which is different between different skus and will change by date
+            # Demands info stored as dict = {state_item: N * D pd.DataFrame (N: agents_count, D: dates)}
+            picked_facility_data["dynamic_data"] = {}
+            for item, ori_dynamic_value in data["dynamic_data"].items():
+                dynamic_value = copy.deepcopy(ori_dynamic_value)
+                assert(set(self.sku_list) <= set(dynamic_value.columns.unique()))
+                dates_format_dic = {
+                    datetime.strftime(pd.to_datetime(date), "%Y/%m/%d"): date
+                    for date in dynamic_value.index
+                }
+                self.date_to_index = {}
+                # For warmup, start date forwards lookback_len
+                for step, date in enumerate(pd.date_range(self.picked_start_date - timedelta(self.lookback_len), self.picked_end_date)):
+                    date_str = datetime.strftime(date, "%Y/%m/%d")
+                    # Check the target date in saved in demands file
+                    assert(date_str in dates_format_dic.keys())
+                    # Convert the actual date to date index
+                    self.date_to_index[dates_format_dic[date_str]] = step - self.lookback_len
+                dynamic_value.rename(index=self.date_to_index, inplace=True)
+                # Remove useless date and sku
+                dynamic_value = dynamic_value.loc[self.date_to_index.values()]
+                dynamic_value = dynamic_value[self.sku_list]
+                picked_facility_data["dynamic_data"][item] = dynamic_value.sort_values(by="Date")
+            self.picked_data.append(picked_facility_data)
 
     """
         Update the self.config by update_config
@@ -176,11 +192,6 @@ class ReplenishmentEnv(Env):
     
     def init_env(self) -> None:
         # Get basic env info from config
-        # Convert the sku list from file to list. 
-        if isinstance(self.config["env"]["sku_list"], str):
-            self.sku_list = DataLoader.load_as_list(self.config["env"]["sku_list"])
-        else:
-            self.sku_list = self.config["env"]["sku_list"]
         self.balance                = self.config["env"].get("initial_balance", 0)
         self.integerization_sku     = self.config["env"].get("integerization_sku", False)
         self.lookback_len           = self.config["env"].get("lookback_len", 7)
@@ -234,9 +245,9 @@ class ReplenishmentEnv(Env):
         self.agent_states = AgentStates(
             self.sku_list, 
             self.durations,
-            self.dynamic_info,
-            self.static_info, 
-            self.shared_info,
+            self.dynamic_data,
+            self.static_data, 
+            self.shared_data,
             self.lookback_len,
         )
 

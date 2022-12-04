@@ -33,14 +33,14 @@ facility:
     sku:
       # Dynamic info that will changed every day. 
       # Each item is interpreted by a single file with columns "Date,SKU0,SKU1,SKU2,..."
-      dynamic_info:
+      dynamic_data:
         - name: procurement_cost
           file: ReplenishmentEnv/data/sku2778/sku2778.super_vendor.selling_price.csv
         - name: selling_price
           file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
       # Static info that are different between skus and will not changed every day.
       # All items are interpreted by a singl file with columns "SKU,item1,item2,..."
-      static_info: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
+      static_data: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
       # Shared info that all skus has the same value for some feature and will not changed.
       order_info:
         order_cost: 10
@@ -54,14 +54,14 @@ facility:
     upstream: store1
     downstream: consumer
     sku:
-      dynamic_info:
+      dynamic_data:
         - name: procurement_cost
           file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
         - name: selling_price
           file: ReplenishmentEnv/data/sku2778/sku2778.store2.selling_price.csv
         - name: demand
           file: ReplenishmentEnv/data/sku2778/sku2778.demand.csv
-      static_info: ReplenishmentEnv/data/sku2778/sku2778.store2.info.csv
+      static_data: ReplenishmentEnv/data/sku2778/sku2778.store2.info.csv
       order_info:
         order_cost: 10
         volume: 1

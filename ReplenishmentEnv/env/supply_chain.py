@@ -71,6 +71,9 @@ class SupplyChain:
     
     def get_name(self, index) -> int:
         return self.index_to_name[index]
+
+    def get_facility_count(self) -> int:
+        return len(self.facilities)
             
 
     

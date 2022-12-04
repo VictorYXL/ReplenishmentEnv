@@ -20,9 +20,9 @@ class AgentStates(object):
             self, 
             agent_ids: list, 
             durations: int=0,
-            dynamic_info: dict=None, 
-            static_info: np.array=None, 
-            shared_info: dict=None, 
+            dynamic_data: dict=None, 
+            static_data: np.array=None, 
+            shared_data: dict=None, 
             lookback_len: int=7, 
         ) -> None:
         self.agent_ids = agent_ids
@@ -50,14 +50,14 @@ class AgentStates(object):
 
         # Init the state in order as: dynamic state, static_state, shared_state and default value
         for item in self.states_items:
-            if item in dynamic_info:
-                value = dynamic_info[item].to_numpy()
-            elif item in static_info:
-                value = static_info[item].to_numpy()
-            elif item in shared_info:
-                value = shared_info[item]
+            if item in dynamic_data:
+                value = dynamic_data[item].to_numpy()
+            elif item in static_data:
+                value = static_data[item].to_numpy()
+            elif item in shared_data:
+                value = shared_data[item]
             elif hasattr(self, "init_{0}".format(item)):
-                value = eval("self.init_{0}".format(item))(dynamic_info, static_info, shared_info)
+                value = eval("self.init_{0}".format(item))(dynamic_data, static_data, shared_data)
             else:
                 value = np.nan
             self.__setitem__([item, "all_dates"], value)
@@ -207,20 +207,20 @@ class AgentStates(object):
         Init in_stock from init_stock
     """
     def init_in_stock(self,             
-            dynamic_info: dict=None, 
-            static_info: np.array=None, 
-            shared_info: dict=None) -> np.array:
+            dynamic_data: dict=None, 
+            static_data: np.array=None, 
+            shared_data: dict=None) -> np.array:
         # First date
-        first_value = static_info.get("init_stock", 0).to_numpy().reshape(1, -1)
+        first_value = static_data.get("init_stock", 0).to_numpy().reshape(1, -1)
         # Rest dates
         rest_value = (np.ones((self.durations + self.lookback_len - 1, self.agents_count)) * np.nan)
         value = np.concatenate([first_value, rest_value])
         return value
     
     def init_in_transit(self,
-            dynamic_info: dict=None, 
-            static_info: np.array=None, 
-            shared_info: dict=None) -> np.array:
+            dynamic_data: dict=None, 
+            static_data: np.array=None, 
+            shared_data: dict=None) -> np.array:
         return 0
     
     # Output M * N matrix: M is state count and N is agent count

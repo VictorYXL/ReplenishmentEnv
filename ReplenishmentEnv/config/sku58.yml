@@ -24,11 +24,11 @@ facility:
     upstream: super_vendor
     downstream: consumer
     sku:
-      dynamic_info: 
+      dynamic_data: 
         - name: demand
           file: ReplenishmentEnv/data/sku58/sku58.demand.csv
-      static_info: ReplenishmentEnv/data/sku58/sku58.info.csv
-      shared_info:
+      static_data: ReplenishmentEnv/data/sku58/sku58.info.csv
+      shared_data:
         order_cost: 10
         volume: 1
         storage_cost: 0.0025
