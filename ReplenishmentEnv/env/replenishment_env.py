@@ -35,8 +35,12 @@ class ReplenishmentEnv(Env):
 
         # All facilities' sku data are shored in total_data, indlcuing 3 types of sku information.
         # self.total_data = [
-        #    {"shared_data": shared_data, "static_data": static_data, "dynamic_data": dynamic_data},
-        #    {"shared_data": shared_data, "static_data": static_data, "dynamic_data": dynamic_data},
+        # {
+        #       "facility_name" : name,
+        #       "shared_data"   : shared_data, 
+        #       "static_data"   : static_data, 
+        #       "dynamic_data"  : dynamic_data
+        # },
         #    ...
         #]
         # Shared info saved shared information for all skus and all dates.
@@ -79,10 +83,9 @@ class ReplenishmentEnv(Env):
     """
     def build_supply_chain(self) -> None:
         self.supply_chain = SupplyChain(self.config["facility"])
-        self.facilities_count = len(self.supply_chain.index_to_name)
     
     """
-        Load all facilities' sku data, including shared, static and dynamic data.
+        Load all facilities' sku data, including facility name, shared data, static data and dynamic data.
         Only load only in __init__ function.
     """
     def load_data(self) -> None:
@@ -97,7 +100,8 @@ class ReplenishmentEnv(Env):
 
         for facility_config in self.config["facility"]:
             assert("sku" in facility_config)
-            sku_config = facility_config["sku"]
+            facility_name   = facility_config["name"]
+            sku_config      = facility_config["sku"]
 
             # Load shared info, which is shared for all skus and all dates.
             # Shared info is stored as dict = {state item: value}
@@ -122,9 +126,10 @@ class ReplenishmentEnv(Env):
                 facility_dynamic_data[item] = dynamic_value
 
             self.total_data.append({
-                "shared_data": facility_shared_data, 
-                "static_data": facility_static_data, 
-                "dynamic_data": facility_dynamic_data
+                "facility_name" : facility_name,
+                "shared_data"   : facility_shared_data, 
+                "static_data"   : facility_static_data, 
+                "dynamic_data"  : facility_dynamic_data
             })
     
     """
@@ -138,7 +143,7 @@ class ReplenishmentEnv(Env):
     def init_data(self) -> None:
         self.picked_data = []
         for data in self.total_data:
-            picked_facility_data = {}
+            picked_facility_data = {"facility_name": data["facility_name"]}
 
             # Load shared info
             picked_facility_data["shared_data"] = data["shared_data"]
@@ -240,18 +245,16 @@ class ReplenishmentEnv(Env):
         return picked_start_date, picked_end_date
 
     def init_state(self) -> None:
-        self.agents = self.sku_list
-        self.agent_count = len(self.agents)
         self.agent_states = AgentStates(
             self.sku_list, 
             self.durations,
-            self.dynamic_data,
-            self.static_data, 
-            self.shared_data,
+            self.picked_data,
             self.lookback_len,
         )
 
     def init_monitor(self) -> None:
+        a = self.agent_states["store1", "selling_price"]
+        b = self.agent_states["store2", "selling_price"]
         pass
 
     """
