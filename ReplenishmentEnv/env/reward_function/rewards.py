@@ -1,7 +1,7 @@
 from typing import Tuple
 import numpy as np
 
-from ReplenishmentEnv.env.agent_states import AgentStates
+from ReplenishmentEnv.env.supply_chain.agent_states import AgentStates
 
 """
     reward1: calculate the cost when buy in.

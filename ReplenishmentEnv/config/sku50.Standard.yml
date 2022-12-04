@@ -22,7 +22,7 @@ env:
 
 facility:
   - name: store1
-    upstream: super_vender
+    upstream: super_vendor
     downstream: store2
     sku:
       dynamic_info:

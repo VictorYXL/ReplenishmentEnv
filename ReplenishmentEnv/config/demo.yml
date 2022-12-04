@@ -28,7 +28,7 @@ env:
 # * Facility info
 facility:
   - name: store1            # * Facility name
-    upstream: super_vender  # * Upstream for facility. Super_vendor can provide unlimited skus.
+    upstream: super_vendor  # * Upstream for facility. Super_vendor can provide unlimited skus.
     downstream: store2      # * Downstream for facility. Consumers represents the actual demand.
     sku:
       # Dynamic info that will changed every day. 

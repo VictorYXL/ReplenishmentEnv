@@ -7,10 +7,10 @@ import pandas as pd
 import random
 import yaml
 
-from ReplenishmentEnv.utility.data_loader import DataLoader
+
 from ReplenishmentEnv.env.reward_function.rewards import reward1, reward2
 from ReplenishmentEnv.env.warmup_function.warmup import replenish_by_last_demand
-from ReplenishmentEnv.env.agent_states import AgentStates
+from ReplenishmentEnv.env.supply_chain.supply_chain import SupplyChain
 from ReplenishmentEnv.utility.utility import deep_update
 
 class ReplenishmentEnv(Env):
@@ -30,10 +30,6 @@ class ReplenishmentEnv(Env):
 
         # Look back information length
         self.lookback_len = 0
-
-        # Agent state: object for AgentStates to save all agents info in current env step.
-        # Inited from sku info file. Updated in env action.
-        self.agent_states: AgentStates = None
 
         # 3 types of sku information which will be used in AgentStates init.
         # Shared info saved shared information for all skus and all dates.
@@ -56,7 +52,7 @@ class ReplenishmentEnv(Env):
         self.mode = mode
  
         self.load_config(config_path)
-        self.load_data()
+        self.build_supply_chain()
         self.init_env()
 
     def load_config(self, config_path: str) -> None:
@@ -65,15 +61,19 @@ class ReplenishmentEnv(Env):
 
         assert("env" in self.config)
         assert("mode" in self.config["env"])
-        assert("sku" in self.config)
-        assert("sku_list" in self.config["sku"])
-        assert("dynamic_info" in self.config["sku"])
-        assert("static_info" in self.config["sku"])
-        assert("shared_info" in self.config["sku"])
+        assert("sku_list" in self.config["env"])
+        assert("facility" in self.config)
         assert("profit" in self.config)
         assert("reward" in self.config)
         assert("output_state" in self.config)
         assert("action" in self.config)
+
+    """
+        Build supply chain
+    """
+    def build_supply_chain(self) -> None:
+        self.supply_chain = SupplyChain(self.config["facility"])
+
 
     """
         Load shared, static and dynamic data.
@@ -81,9 +81,6 @@ class ReplenishmentEnv(Env):
     """
     def load_data(self) -> None:
         data_loader = DataLoader()
-        # Convert the sku list from file to list. 
-        if isinstance(self.config["sku"]["sku_list"], str):
-            self.config["sku"]["sku_list"] = data_loader.load_as_list(self.config["sku"]["sku_list"])
 
         # Load shared info, which is shared for all skus and all dates.
         # Shared info is stored as dict = {state item: value}
@@ -167,9 +164,12 @@ class ReplenishmentEnv(Env):
     
     def init_env(self) -> None:
         # Get basic env info from config
-        self.sku_list               = self.config["sku"]["sku_list"]
+        # Convert the sku list from file to list. 
+        if isinstance(self.config["sku"]["sku_list"], str):
+            self.sku_list = DataLoader.load_as_list(self.config["sku"]["sku_list"])
+        else:
+            self.sku_list = self.config["sku"]["sku_list"]
         self.balance                = self.config["env"].get("initial_balance", 0)
-        self.storage_capacity       = self.config["env"].get("storage_capacity", 0)
         self.integerization_sku     = self.config["env"].get("integerization_sku", False)
         self.lookback_len           = self.config["env"].get("lookback_len", 7)
         self.current_output_state   = self.config["output_state"].get("current_state", [])
