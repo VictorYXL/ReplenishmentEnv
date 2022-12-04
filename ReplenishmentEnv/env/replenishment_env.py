@@ -10,8 +10,9 @@ import yaml
 
 from ReplenishmentEnv.env.reward_function.rewards import reward1, reward2
 from ReplenishmentEnv.env.warmup_function.warmup import replenish_by_last_demand
-from ReplenishmentEnv.env.supply_chain.supply_chain import SupplyChain
+from ReplenishmentEnv.env.supply_chain import SupplyChain
 from ReplenishmentEnv.utility.utility import deep_update
+from ReplenishmentEnv.utility.data_loader import DataLoader
 
 class ReplenishmentEnv(Env):
     def __init__(self, config_path, mode="train"):
@@ -53,6 +54,7 @@ class ReplenishmentEnv(Env):
  
         self.load_config(config_path)
         self.build_supply_chain()
+        self.load_data()
         self.init_env()
 
     def load_config(self, config_path: str) -> None:
@@ -73,36 +75,46 @@ class ReplenishmentEnv(Env):
     """
     def build_supply_chain(self) -> None:
         self.supply_chain = SupplyChain(self.config["facility"])
-
-
+    
     """
-        Load shared, static and dynamic data.
+        Load all stores' sku data, including shared, static and dynamic data.
         Only load only in __init__ function.
     """
     def load_data(self) -> None:
+        self.total_data = []
         data_loader = DataLoader()
+        for facility_config in self.config["facility"]:
+            assert("sku" in facility_config)
+            sku_config = facility_config["sku"]
 
-        # Load shared info, which is shared for all skus and all dates.
-        # Shared info is stored as dict = {state item: value}
-        self.total_shared_info = self.config["sku"].get("shared_info", {})
+            # Load shared info, which is shared for all skus and all dates.
+            # Shared info is stored as dict = {state item: value}
+            store_shared_info = sku_config.get("shared_info", {})
 
-        # Load and check static sku info, which is special for each sku but will not changed.
-        # Static info is stored as N * M pd.DataFrame (N: agents_count, M: state item count)
-        if "static_info" in self.config["sku"]:
-            self.total_static_info = data_loader.load_as_df(self.config["sku"]["static_info"])
-        else:
-            self.total_static_info = np.zeros((len(self.agent_count), 0))
+            # Load and check static sku info, which is special for each sku but will not changed.
+            # Static info is stored as N * M pd.DataFrame (N: agents_count, M: state item count)
+            if "static_info" in sku_config:
+                store_static_info = data_loader.load_as_df(sku_config["static_info"])
+            else:
+                store_static_info = np.zeros((len(self.agent_count), 0))
 
-        # Load and check demands info, which is different between different skus and will change by date
-        # Demands info stored as dict = {state_item: N * D pd.DataFrame (N: agents_count, D: dates)}
-        self.total_dynamic_info = {}
-        for dynamic_info_item in self.config["sku"].get("dynamic_info", {}):
-            assert("name" in dynamic_info_item)
-            assert("file" in dynamic_info_item)
-            item = dynamic_info_item["name"]
-            file = dynamic_info_item["file"]
-            dynamic_value = data_loader.load_as_matrix(file)
-            self.total_dynamic_info[item] = dynamic_value
+            # Load and check demands info, which is different between different skus and will change by date
+            # Demands info stored as dict = {state_item: N * D pd.DataFrame (N: agents_count, D: dates)}
+            store_dynamic_info = {}
+            for dynamic_info_item in sku_config.get("dynamic_info", {}):
+                assert("name" in dynamic_info_item)
+                assert("file" in dynamic_info_item)
+                item = dynamic_info_item["name"]
+                file = dynamic_info_item["file"]
+                dynamic_value = data_loader.load_as_matrix(file)
+                store_dynamic_info[item] = dynamic_value
+
+            self.total_data.append({
+                "shared_info": store_shared_info, 
+                "static_info": store_static_info, 
+                "dynamic_info": store_dynamic_info
+            })
+        pass
     
     """
         Init and transform the shared, static and dynamic data by:
@@ -165,10 +177,10 @@ class ReplenishmentEnv(Env):
     def init_env(self) -> None:
         # Get basic env info from config
         # Convert the sku list from file to list. 
-        if isinstance(self.config["sku"]["sku_list"], str):
-            self.sku_list = DataLoader.load_as_list(self.config["sku"]["sku_list"])
+        if isinstance(self.config["env"]["sku_list"], str):
+            self.sku_list = DataLoader.load_as_list(self.config["env"]["sku_list"])
         else:
-            self.sku_list = self.config["sku"]["sku_list"]
+            self.sku_list = self.config["env"]["sku_list"]
         self.balance                = self.config["env"].get("initial_balance", 0)
         self.integerization_sku     = self.config["env"].get("integerization_sku", False)
         self.lookback_len           = self.config["env"].get("lookback_len", 7)

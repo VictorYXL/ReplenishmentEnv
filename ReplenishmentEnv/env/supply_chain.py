@@ -1,5 +1,3 @@
-from ReplenishmentEnv.env.supply_chain.facility import Facility
-
 """
     SupplyChain class, contains a lift of facilities.
     Currently, only chainlike supply chain are supprted. 
@@ -14,11 +12,12 @@ class SupplyChain:
                 [upstream_index, downstream_index],
                 ...
             ]
-            Index represents the order as actions, rewards, and others in env.
+            Index represents the order as actions, rewards, and agent_states in env.
             Before the supply chain is built, index is represented by facility name.
         """
         self.facilities = []
         self.name_to_index = {}
+        self.index_to_name = {}
         self.head = None
         self.tail = None
         for index, facility in enumerate(facility_config):
@@ -27,6 +26,7 @@ class SupplyChain:
             assert("downstream" in facility)
             assert("sku" in facility)
             self.name_to_index[facility["name"]] = index
+            self.name_to_index[index] = facility["name"]
             if facility["upstream"] == "super_vendor":
                 self.head = index
                 facility["upstream"] = -1
@@ -34,6 +34,8 @@ class SupplyChain:
                 self.tail = index
                 facility["downstream"] = -2
             self.facilities.append([facility["upstream"], facility["downstream"]])
+        
+        # Replace the store name by index
         for facility in self.facilities:
             if isinstance(facility[0], str):
                 facility[0] = self.name_to_index[facility[0]]
@@ -50,6 +52,25 @@ class SupplyChain:
             if facility[1] >= 0:
                 assert(self.facilities[facility[1]][0] == index)
         pass
+
+    # Return the upstream index 
+    def get_upstream(self, src_index:int) -> int:
+        return self.facilities[src_index][0]
+
+    # Return the downstream index 
+    def get_downstream(self, src_index:int) -> int:
+        return self.facilities[src_index][1]
+    
+    # Return the head index, which upstream is super_vendor
+    def get_head(self) -> int:
+        return self.head
+
+    # Return the tail index, which downstream is consumer
+    def get_tail(self) -> int:
+        return self.tail
+    
+    def get_name(self, index) -> int:
+        return self.index_to_name[index]
             
 
     
