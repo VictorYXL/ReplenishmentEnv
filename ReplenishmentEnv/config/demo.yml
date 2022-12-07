@@ -17,8 +17,6 @@ env:
   horizon: 100                      # Horizon for random sample after reset. Default is 100.
   lookback_len: 21                  # Look back length setting in env.
   integerization_sku: True          # Whether to integerization sku in sell and replenishment. Default is False.
-  storage_capacity: 5000            # * Whole capacity for env. 
-  initial_balance: 0                # Initial balance. Default is 0
   warmup: replenish_by_last_demand  # Warmup lookback_len dates before start_date.
   # * Sku list for env.
   # sku_list in list are also supported like [SKU0, SKU1, SKU2]
@@ -28,6 +26,8 @@ env:
 # * Facility info
 facility:
   - name: store1            # * Facility name
+    initial_balance: 0      # * Init balance for facility. 
+    capacity: 5000          # * Capacity for facility. 
     upstream: super_vendor  # * Upstream for facility. Super_vendor can provide unlimited skus.
     downstream: store2      # * Downstream for facility. Consumers represents the actual demand.
     sku:

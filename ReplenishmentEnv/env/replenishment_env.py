@@ -24,9 +24,6 @@ class ReplenishmentEnv(Env):
         # Sku list from config file
         self.sku_list: list = None
 
-        # Agents list. Each agent represents an sku.
-        self.agents: list = None
-
         # Duration in days
         self.durations = 0
 
@@ -50,9 +47,6 @@ class ReplenishmentEnv(Env):
         # Dynamic info saved the information which is different between different skus and will change by date.
         # Demands info stored as dict = {state_item: N * D pd.DataFrame (N: agents_count, D: dates)}
         self.total_data: list = None
-
-        # Env balance
-        self.balance = 0
 
         # Step tick.
         self.current_step = 0
@@ -82,7 +76,10 @@ class ReplenishmentEnv(Env):
         Build supply chain
     """
     def build_supply_chain(self) -> None:
-        self.supply_chain = SupplyChain(self.config["facility"])
+        self.supply_chain   = SupplyChain(self.config["facility"])
+        self.facility_list  = self.supply_chain.get_facility_list()
+        self.facility_to_id = {facility_name: index for index, facility_name in enumerate(self.facility_list)}
+        self.id_to_facility = {index: facility_name for index, facility_name in enumerate(self.facility_list)}
     
     """
         Load all facilities' sku data, including facility name, shared data, static data and dynamic data.
@@ -197,13 +194,16 @@ class ReplenishmentEnv(Env):
     
     def init_env(self) -> None:
         # Get basic env info from config
-        self.balance                = self.config["env"].get("initial_balance", 0)
         self.integerization_sku     = self.config["env"].get("integerization_sku", False)
         self.lookback_len           = self.config["env"].get("lookback_len", 7)
         self.current_output_state   = self.config["output_state"].get("current_state", [])
         self.lookback_output_state  = self.config["output_state"].get("lookback_state", [])
         self.action_mode            = self.config["action"].get("mode", "continuous")
         self.warmup_function        = self.config["env"].get("warmup", "replenish_by_last_demand")
+
+        # Update info for each facilities
+        self.capacity  = [facility.get("capacity", 1000) for facility in self.config["facility"]]
+        self.balance   = [facility.get("init_balance", 0) for facility in self.config["facility"]]
 
         # Get mode related info from mode config
         mode_configs = [mode_config for mode_config in self.config["env"]["mode"] if mode_config["name"] == self.mode]
@@ -253,22 +253,19 @@ class ReplenishmentEnv(Env):
         )
 
     def init_monitor(self) -> None:
-        a = self.agent_states["store1", "selling_price"]
-        b = self.agent_states["store2", "selling_price"]
         pass
 
     """
         Step orders: Replenish -> Sell -> Receive arrived skus -> Update balance
-        actions: [action_idx/action_quantity] by sku order, defined by action_setting in config
-
+        actions: C * N matrix, C facility count, N agent count
+        contains action_idx or action_quantity, defined by action_setting in config
     """
     def step(self, actions: np.array) -> Tuple[np.array, np.array, list, dict]:
-
         self.replenish(actions)
         self.sell()
         self.receive_sku()
         self.profit, reward_info = self.get_profit()
-        self.balance += sum(self.profit)
+        self.balance += np.sum(self.profit, axis=1)
 
         states = self.get_state()
         if self.config["reward"].get("mode", None) == "same_as_profit":
@@ -287,33 +284,47 @@ class ReplenishmentEnv(Env):
         Sell by demand and in stock
     """
     def sell(self) -> None:
-        current_demand = self.agent_states["demand"]
-        in_stock = self.agent_states["in_stock"]
-        self.agent_states["sale"] = np.where(in_stock >= current_demand, current_demand, in_stock)
-        self.agent_states["in_stock"] -= self.agent_states["sale"]
+        current_demand = self.agent_states["all_facilities", "demand"]
+        in_stock = self.agent_states["all_facilities", "in_stock"]
+        sale = np.where(in_stock >= current_demand, current_demand, in_stock)
+        self.agent_states["all_facilities", "sale"] = sale
+        self.agent_states["all_facilities", "in_stock"] -= sale
+
+        # Sold sku will arrive downstream facility after vlt dates 
+        for facility in self.supply_chain.get_facility_list():
+            if facility != self.supply_chain.get_tail():
+                downstream = self.supply_chain[facility, "downstream"]
+                vlt = self.agent_states[downstream, "vlt"]
+                arrived_index = np.array(range(0, int(max(vlt)), 1)).reshape(-1, 1)
+                arrived_flag = np.where(arrived_index == vlt, 1, 0)
+                arrived_matrix = arrived_flag * self.agent_states[facility, "sale"]
+                future_dates = np.array(range(0, int(max(vlt)), 1)) + self.agent_states.current_step
+                self.agent_states[downstream, "arrived", future_dates] += arrived_matrix
 
     """
         Receive the arrived sku.
         When exceed the storage capacity, sku will be accepted in same ratio
     """
     def receive_sku(self) -> None:
-        # calculate all arrived amount
-        date_index = np.array(range(-self.lookback_len, self.current_step, 1)).reshape(-1, 1)
-        arrived_flag = np.where((self.agent_states["vlt", "history"] + date_index) == self.current_step, 1, 0)
-        # Arrived for each sku
-        arrived = np.sum(arrived_flag * self.agent_states["replenish", "history"], axis=0)  
-        self.agent_states["in_transit"] -= arrived
-        # Arrived for all skus
-        total_arrived = sum(arrived)
-        # Calculate accept ratio due to the capacity limitation.
-        remaining_space = self.storage_capacity - np.sum(self.agent_states["in_stock"] * self.agent_states["volume"])
-        accept_ratio = min(remaining_space / total_arrived, 1.0) if total_arrived > 0 else 0
-        accept_amount = arrived * accept_ratio
-        if self.integerization_sku:
-            accept_amount = np.floor(accept_amount)
-        # Receive skus by accept ratio
-        self.agent_states["excess"] = arrived - accept_amount
-        self.agent_states["in_stock"] += accept_amount
+        for facility in self.supply_chain.get_facility_list():
+            # Arrived from upstream
+            arrived = self.agent_states[facility, "arrived"]
+            total_arrived = sum(arrived)
+            self.agent_states[facility, "in_transit"] -= arrived
+
+            # Calculate accept ratio due to the capacity limitation.
+            capacity = self.capacity[self.facility_to_id[facility]]
+            in_stock_volume = np.sum(self.agent_states[facility, "in_stock"] * self.agent_states[facility, "volume"])
+            remaining_space = capacity - in_stock_volume
+            accept_ratio = min(remaining_space / total_arrived, 1.0) if total_arrived > 0 else 0
+
+            # Receive skus by accept ratio
+            accept_amount = arrived * accept_ratio
+            if self.integerization_sku:
+                accept_amount = np.floor(accept_amount)
+            self.agent_states[facility, "excess"] = arrived - accept_amount
+            self.agent_states[facility, "accepted"] = accept_amount
+            self.agent_states[facility, "in_stock"] += accept_amount
 
     """
         Replenish skus by actions
@@ -329,10 +340,10 @@ class ReplenishmentEnv(Env):
             action_space = np.array(self.config["action"]["space"])
             replenish_amount = np.round(action_space[actions])
         elif self.action_mode == "demand_mean_continuous":
-            history_demand_mean = np.average(self.agent_states["demand", "lookback"], 0)
+            history_demand_mean = np.average(self.agent_states["all_facilities", "demand", "lookback"], 1)
             replenish_amount = actions * history_demand_mean
         elif self.action_mode == "demand_mean_discrete":
-            history_demand_mean = np.average(self.agent_states["demand", "lookback"], 0)
+            history_demand_mean = np.average(self.agent_states["all_facilities", "demand", "lookback"], 1)
             assert("space" in self.config["action"])
             action_space = np.array(self.config["action"]["space"])
             replenish_amount = action_space[actions] * history_demand_mean
@@ -341,8 +352,16 @@ class ReplenishmentEnv(Env):
 
         if self.integerization_sku:
             replenish_amount = np.floor(replenish_amount)
-        self.agent_states["replenish"] = replenish_amount
-        self.agent_states["in_transit"] += replenish_amount
+        
+        # Facility's replenishment is the replenishment as upstream's demand.
+        for facility in self.supply_chain.get_facility_list():
+            facility_replenish_amount = replenish_amount[self.facility_to_id[facility]]
+            self.agent_states[facility, "replenish"] = facility_replenish_amount
+            self.agent_states[facility, "in_transit"] += facility_replenish_amount
+            upstream = self.supply_chain[facility, "upstream"]
+            if upstream != self.supply_chain.get_super_vendor():
+                self.agent_states[upstream, "demand", "tomorrow"] = facility_replenish_amount
+
 
     def get_profit(self) -> Tuple[np.array, dict]:
         profit_info = self.config["profit"]
@@ -356,7 +375,8 @@ class ReplenishmentEnv(Env):
 
     # Output M * N matrix: M is state count and N is agent count
     def get_state(self) -> dict:
-        states = self.agent_states.snapshot(self.current_output_state, self.lookback_output_state)
+        # states = self.agent_states.snapshot(self.current_output_state, self.lookback_output_state)
+        states = []
         return states
 
     def get_info(self) -> dict:

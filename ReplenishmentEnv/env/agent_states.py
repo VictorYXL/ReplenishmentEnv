@@ -6,7 +6,7 @@ Use agent_states[store_name, state_item, date, agent_id] to get the spaicel stat
     - store_name: Necessary item for target store. All store_name can be found in get_all_stores().
     - state_item: Necessary item for target state. All state_item can be found in get_state_items().
     - date: set date to get state in special date.
-        - today: get state in current_step. Default is today.
+        - today/yesterday/tomorrow: get state in current_step/current_step-1/current_step+1. Default is today.
         - history: get state in all history days. 
         - history_with_current: get state in all history days with current step.
         - lookback: get state in lookback_len history days.
@@ -24,11 +24,12 @@ class AgentStates(object):
             data: list=None, 
             lookback_len: int=7, 
         ) -> None:
-        self.facilities = [facility["facility_name"] for facility in data]
+        self.facility_list = [facility["facility_name"] for facility in data]
         self.agent_ids = agent_ids
         self.agents_count = len(self.agent_ids)
         self.states_items = self.get_state_items()
         self.inherited_states_items = self.get_inherited_items()
+        self.init_0_items = self.get_init_0_items()
 
         # Look back len in date's look back mode.
         self.lookback_len = lookback_len
@@ -40,7 +41,7 @@ class AgentStates(object):
         self.durations = durations
     
         # Facility name to index dict.
-        self.facility_to_index = {facility_name: index for index, facility_name in enumerate(self.facilities)}
+        self.facility_to_index = {facility_name: index for index, facility_name in enumerate(self.facility_list)}
 
         # Agent id to index dict.
         self.agent_id_to_index = {agent_id: index for index, agent_id in enumerate(self.agent_ids)}
@@ -50,7 +51,7 @@ class AgentStates(object):
     
         # C * M * D * N: N , C facility count, M state item count, D dates count, N agent count
         self.states = np.zeros((
-            len(self.facilities),
+            len(self.facility_list),
             len(self.states_items),
             self.durations + self.lookback_len,
             len(self.agent_ids)
@@ -65,6 +66,8 @@ class AgentStates(object):
                     value = facility_data["static_data"][item].to_numpy()
                 elif item in facility_data["shared_data"]:
                     value = facility_data["shared_data"][item]
+                elif item in self.init_0_items:
+                    value = 0
                 elif hasattr(self, "init_{0}".format(item)):
                     value = eval("self.init_{0}".format(item))(facility_data)
                 else:
@@ -92,16 +95,29 @@ class AgentStates(object):
             "replenish",          # Replenish amount in current step for each sku
             "excess",             # Excess amount for each sku after sales
             "in_transit",         # Sku amount in transit 
+            "arrived",            # Arrived amount from upstream
+            "accepted",           # Accepted amount
         ]
         return states_items
     
     """
-        The value that will inherite from yesterday
+        The state that will inherite from yesterday
     """
     def get_inherited_items(self) -> list:
         states_items = [
             "in_stock",
             "in_transit",
+        ]
+        return states_items
+    
+    """
+        The state that should be inited as 0
+    """
+    def get_init_0_items(self) -> list:
+        states_items = [
+            "demand",
+            "in_transit",
+            "arrived"
         ]
         return states_items
 
@@ -126,23 +142,36 @@ class AgentStates(object):
             date = index[2]
             agent_id = index[3]
 
-        assert(facility_name in self.facility_to_index)
-        facility_id = self.facility_to_index[facility_name]
+        if facility_name == "all_facilities":
+            facility_id = slice(None, None, None)
+        else:
+            assert(facility_name in self.facility_to_index)
+            facility_id = self.facility_to_index[facility_name]
 
-        # Due to warmup, date_index = current_step + lookback_len
-        date_index = self.current_step + self.lookback_len
-        if date == "today":
-            date = date_index
-        elif date == "history":
-            date = slice(None, date_index, None)
-        elif date == "history_with_current":
-            date = slice(None, date_index + 1, None)
-        elif date == "lookback":
-            date = slice(max(date_index - self.lookback_len, 0), date_index, None)
-        elif date == "lookback_with_current":
-            date = slice(max(date_index - self.lookback_len + 1, 0), date_index + 1, None)
-        elif date == "all_dates":
-            date = slice(None, None, None)
+        if isinstance(date, str):
+            # Due to warmup, today date index = current_step + lookback_len
+            today = self.current_step + self.lookback_len
+            if date == "today":
+                date = today
+            elif date == "tomorrow":
+                date = today + 1
+            elif date == "yesterday":
+                date = today - 1
+            elif date == "history":
+                date = slice(None, today, None)
+            elif date == "history_with_current":
+                date = slice(None, today + 1, None)
+            elif date == "lookback":
+                date = slice(max(today - self.lookback_len, 0), today, None)
+            elif date == "lookback_with_current":
+                date = slice(max(today - self.lookback_len + 1, 0), today + 1, None)
+            elif date == "all_dates":
+                date = slice(None, None, None)
+        elif isinstance(date, int):
+            date = date + self.lookback_len
+        elif isinstance(date, np.ndarray):
+            date = date + self.lookback_len
+
 
         if isinstance(date, int):
             assert(date >= 0 and date < self.durations + self.lookback_len)
@@ -182,23 +211,35 @@ class AgentStates(object):
             date = index[2]
             agent_id = index[3]
 
-        assert(facility_name in self.facility_to_index)
-        facility_id = self.facility_to_index[facility_name]
-
-        # Due to warmup, date_index = current_step + lookback_len
-        date_index = self.current_step + self.lookback_len
-        if date == "today":
-            date = date_index
-        elif date == "history":
-            date = slice(None, date_index, None)
-        elif date == "history_with_current":
-            date = slice(None, date_index + 1, None)
-        elif date == "lookback":
-            date = slice(max(date_index - self.lookback_len, 0), date_index, None)
-        elif date == "lookback_with_current":
-            date = slice(max(date_index - self.lookback_len + 1, 0), date_index + 1, None)
-        elif date == "all_dates":
-            date = slice(None, None, None)
+        if facility_name == "all_facilities":
+            facility_id = slice(None, None, None)
+        else:
+            assert(facility_name in self.facility_to_index)
+            facility_id = self.facility_to_index[facility_name]
+        
+        if isinstance(date, str):
+            # Due to warmup, today date index = current_step + lookback_len
+            today = self.current_step + self.lookback_len
+            if date == "today":
+                date = today
+            elif date == "tomorrow":
+                date = today + 1
+            elif date == "yesterday":
+                date = today - 1
+            elif date == "history":
+                date = slice(None, today, None)
+            elif date == "history_with_current":
+                date = slice(None, today + 1, None)
+            elif date == "lookback":
+                date = slice(max(today - self.lookback_len, 0), today, None)
+            elif date == "lookback_with_current":
+                date = slice(max(today - self.lookback_len + 1, 0), today + 1, None)
+            elif date == "all_dates":
+                date = slice(None, None, None)
+        elif isinstance(date, int):
+            date = date + self.lookback_len
+        elif isinstance(date, np.ndarray):
+            date = date + self.lookback_len
 
         if isinstance(date, int):
             assert(date >= 0 and date < self.durations + self.lookback_len)
@@ -222,7 +263,7 @@ class AgentStates(object):
         # Inherited states items
         if self.current_step < self.durations:
             for item in self.inherited_states_items:
-                self.__setitem__(item, self.__getitem__([item, "history"])[-1])
+                self.__setitem__(["all_facilities", item], self.__getitem__(["all_facilities", item, "yesterday"]))
     
     def pre_step(self):
         self.current_step -= 1
@@ -238,11 +279,8 @@ class AgentStates(object):
         value = np.concatenate([first_value, rest_value])
         return value
     
-    def init_in_transit(self, facility_data: dict) -> np.array:
-        return 0
-    
     # Output M * N matrix: M is state count and N is agent count
-    # TODO: Update to multi-facilities
+    # TODO: Update to multi-facility_list
     def snapshot(self, current_state_items, lookback_state_items):
         states_list = [self.__getitem__(item).reshape(1, self.agents_count).copy() for item in current_state_items]
         for item in lookback_state_items:

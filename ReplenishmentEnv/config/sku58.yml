@@ -14,7 +14,7 @@ env:
   horizon: 100
   lookback_len: 21
   integerization_sku: True
-  storage_capacity: 5800
+  capacity: 5800
   initial_balance: 0
   warmup: replenish_by_last_demand
   sku_list: ReplenishmentEnv/data/sku58/sku58.sku_list.csv

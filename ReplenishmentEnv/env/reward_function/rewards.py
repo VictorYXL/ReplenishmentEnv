@@ -10,15 +10,15 @@ from ReplenishmentEnv.env.agent_states import AgentStates
         - backlog_ratio: backlog = (selling_price - procurement_cost) * (cur_demand - sale) * backlog_ratio
 """
 def reward1(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dict]:
-    selling_price      = agent_states["selling_price"]
-    procurement_cost   = agent_states["procurement_cost"]
-    sale               = agent_states["sale"]
-    replenish          = agent_states["replenish"]
-    order_cost         = agent_states["order_cost"]
-    in_stocks          = agent_states["in_stock"]
-    storage_cost       = agent_states["storage_cost"]
-    holding_cost_ratio = agent_states["holding_cost_ratio"]
-    current_demand     = agent_states["demand"]
+    selling_price      = agent_states["all_facilities", "selling_price"]
+    procurement_cost   = agent_states["all_facilities", "procurement_cost"]
+    sale               = agent_states["all_facilities", "sale"]
+    replenish          = agent_states["all_facilities", "replenish"]
+    order_cost         = agent_states["all_facilities", "order_cost"]
+    in_stocks          = agent_states["all_facilities", "in_stock"]
+    storage_cost       = agent_states["all_facilities", "storage_cost"]
+    holding_cost_ratio = agent_states["all_facilities", "holding_cost_ratio"]
+    current_demand     = agent_states["all_facilities", "demand"]
     backlog_ratio      = profit_info.get("backlog_ratio", 0)
 
     # TODO: discuss whether to add (1 - excess_ratio) * excess as compensation
@@ -47,16 +47,16 @@ def reward1(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
         - excess_ratio: Only excess_ratio of excess skus will cost loss in profit
 """
 def reward2(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dict]:
-    selling_price      = agent_states["selling_price"]
-    procurement_cost   = agent_states["procurement_cost"]
-    sale               = agent_states["sale"]
-    excess             = agent_states["excess"]
-    replenish          = agent_states["replenish"]
-    order_cost         = agent_states["order_cost"]
-    in_stocks          = agent_states["in_stock"]
-    current_demand     = agent_states["demand"]
-    storage_cost       = agent_states["storage_cost"]
-    holding_cost_ratio = agent_states["holding_cost_ratio"]
+    selling_price      = agent_states["all_facilities", "selling_price"]
+    procurement_cost   = agent_states["all_facilities", "procurement_cost"]
+    sale               = agent_states["all_facilities", "sale"]
+    excess             = agent_states["all_facilities", "excess"]
+    replenish          = agent_states["all_facilities", "replenish"]
+    order_cost         = agent_states["all_facilities", "order_cost"]
+    in_stocks          = agent_states["all_facilities", "in_stock"]
+    current_demand     = agent_states["all_facilities", "demand"]
+    storage_cost       = agent_states["all_facilities", "storage_cost"]
+    holding_cost_ratio = agent_states["all_facilities", "holding_cost_ratio"]
     backlog_ratio      = profit_info.get("backlog_ratio", 0)
     excess_ratio       = profit_info.get("excess_ratio", 1)
 
