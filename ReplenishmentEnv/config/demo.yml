@@ -42,7 +42,7 @@ facility:
       # All items are interpreted by a singl file with columns "SKU,item1,item2,..."
       static_data: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
       # Shared info that all skus has the same value for some feature and will not changed.
-      order_info:
+      shared_data:
         order_cost: 10
         volume: 1
         storage_cost: 0.0025
@@ -62,7 +62,7 @@ facility:
         - name: demand
           file: ReplenishmentEnv/data/sku2778/sku2778.demand.csv
       static_data: ReplenishmentEnv/data/sku2778/sku2778.store2.info.csv
-      order_info:
+      shared_data:
         order_cost: 10
         volume: 1
         storage_cost: 0.0025

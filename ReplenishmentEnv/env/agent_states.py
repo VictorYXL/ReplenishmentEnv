@@ -2,11 +2,12 @@ import numpy as np
 
 """
 Numpy based matrix to store the state for all stores and agents.
-Use agent_states[store_name, state_item, date, agent_id] to get the spaicel state for special agent and special day.
-    - store_name: Necessary item for target store. All store_name can be found in get_all_stores().
+Use agent_states[facility_name, state_item, date, agent_id] to get the spaicel state for special agent and special day.
+    - facility_name: Necessary item for target store. All facility_name can be found in get_all_stores().
     - state_item: Necessary item for target state. All state_item can be found in get_state_items().
-    - date: set date to get state in special date.
-        - today/yesterday/tomorrow: get state in current_step/current_step-1/current_step+1. Default is today.
+    - date: set date to get state in special date.`
+        - today: get state in current_step. Default is today.
+        - yesterday: get state in current_step - 1.
         - history: get state in all history days. 
         - history_with_current: get state in all history days with current step.
         - lookback: get state in lookback_len history days.
@@ -153,8 +154,6 @@ class AgentStates(object):
             today = self.current_step + self.lookback_len
             if date == "today":
                 date = today
-            elif date == "tomorrow":
-                date = today + 1
             elif date == "yesterday":
                 date = today - 1
             elif date == "history":
@@ -222,8 +221,6 @@ class AgentStates(object):
             today = self.current_step + self.lookback_len
             if date == "today":
                 date = today
-            elif date == "tomorrow":
-                date = today + 1
             elif date == "yesterday":
                 date = today - 1
             elif date == "history":

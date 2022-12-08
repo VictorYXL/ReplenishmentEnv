@@ -30,6 +30,8 @@ facility:
           file: ReplenishmentEnv/data/sku2778/sku2778.store2.selling_price.csv
         - name: selling_price
           file: ReplenishmentEnv/data/sku2778/sku2778.store3.selling_price.csv
+        - name: demand
+          file: ReplenishmentEnv/data/sku2778/sku2778.demand.csv
       static_data: ReplenishmentEnv/data/sku2778/sku2778.store3.info.csv
       shared_data:
         order_cost: 10

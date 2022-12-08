@@ -295,10 +295,10 @@ class ReplenishmentEnv(Env):
             if facility != self.supply_chain.get_tail():
                 downstream = self.supply_chain[facility, "downstream"]
                 vlt = self.agent_states[downstream, "vlt"]
-                arrived_index = np.array(range(0, int(max(vlt)), 1)).reshape(-1, 1)
+                arrived_index = np.array(range(0, int(max(vlt)) + 1, 1)).reshape(-1, 1)
                 arrived_flag = np.where(arrived_index == vlt, 1, 0)
                 arrived_matrix = arrived_flag * self.agent_states[facility, "sale"]
-                future_dates = np.array(range(0, int(max(vlt)), 1)) + self.agent_states.current_step
+                future_dates = np.array(range(0, int(max(vlt)) + 1, 1)) + self.agent_states.current_step
                 self.agent_states[downstream, "arrived", future_dates] += arrived_matrix
 
     """
@@ -359,8 +359,19 @@ class ReplenishmentEnv(Env):
             self.agent_states[facility, "replenish"] = facility_replenish_amount
             self.agent_states[facility, "in_transit"] += facility_replenish_amount
             upstream = self.supply_chain[facility, "upstream"]
-            if upstream != self.supply_chain.get_super_vendor():
-                self.agent_states[upstream, "demand", "tomorrow"] = facility_replenish_amount
+            if upstream == self.supply_chain.get_super_vendor():
+                # If upstream is super_vendor, all replenishment will arrive after vlt dates
+                vlt = self.agent_states[facility, "vlt"]
+                arrived_index = np.array(range(0, int(max(vlt)) + 1, 1)).reshape(-1, 1)
+                arrived_flag = np.where(arrived_index == vlt, 1, 0)
+                arrived_matrix = arrived_flag * self.agent_states[facility, "replenish"]
+                future_dates = np.array(range(0, int(max(vlt)) + 1, 1)) + self.agent_states.current_step
+                self.agent_states[facility, "arrived", future_dates] += arrived_matrix
+                
+            else:
+                # If upstream is not super_vendor, all replenishment will be sent as demand to upstream
+                self.agent_states[upstream, "demand"] = facility_replenish_amount
+                
 
 
     def get_profit(self) -> Tuple[np.array, dict]:
