@@ -6,8 +6,7 @@ from ReplenishmentEnv.env.agent_states import AgentStates
 """
     reward1: calculate the cost when buy in.
     agent_states: object for AgentStates to save all agents info in current env step.
-    profit_info: env state. For reward1, following keys are needed:
-        - backlog_ratio: backlog = (selling_price - procurement_cost) * (cur_demand - sale) * backlog_ratio
+    profit_info: env state. 
 """
 def reward1(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dict]:
     selling_price      = agent_states["all_facilities", "selling_price"]
@@ -16,16 +15,17 @@ def reward1(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
     replenish          = agent_states["all_facilities", "replenish"]
     order_cost         = agent_states["all_facilities", "order_cost"]
     in_stocks          = agent_states["all_facilities", "in_stock"]
-    storage_cost       = agent_states["all_facilities", "storage_cost"]
-    holding_cost_ratio = agent_states["all_facilities", "holding_cost_ratio"]
+    unit_storage_cost  = agent_states["all_facilities", "unit_storage_cost"]
+    volume             = agent_states["all_facilities", "volume"]
+    holding_cost       = agent_states["all_facilities", "holding_cost"]
     current_demand     = agent_states["all_facilities", "demand"]
-    backlog_ratio      = profit_info.get("backlog_ratio", 0)
+    backlog_ratio      = agent_states["all_facilities", "backlog_ratio"]
 
     # TODO: discuss whether to add (1 - excess_ratio) * excess as compensation
     income       = selling_price * sale
     outcome      = procurement_cost * replenish
     order_cost   = order_cost * np.where(replenish > 0, 1, 0)
-    holding_cost = (storage_cost + selling_price * holding_cost_ratio) * in_stocks
+    holding_cost = (holding_cost + unit_storage_cost * volume) * in_stocks
     backlog      = (selling_price - procurement_cost) * (current_demand - sale) * backlog_ratio
 
     reward       = income - outcome - order_cost - holding_cost - backlog
@@ -43,7 +43,6 @@ def reward1(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
     reward2: calculate the cost when sale.
     agent_states: object for AgentStates to save all agents info in current env step.
     profit_info: env state. For reward2, following keys are needed:
-        - backlog_ratio: backlog = (selling_price - procurement_cost) * (cur_demand - sale) * backlog_ratio
         - excess_ratio: Only excess_ratio of excess skus will cost loss in profit
 """
 def reward2(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dict]:
@@ -55,15 +54,16 @@ def reward2(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
     order_cost         = agent_states["all_facilities", "order_cost"]
     in_stocks          = agent_states["all_facilities", "in_stock"]
     current_demand     = agent_states["all_facilities", "demand"]
-    storage_cost       = agent_states["all_facilities", "storage_cost"]
-    holding_cost_ratio = agent_states["all_facilities", "holding_cost_ratio"]
-    backlog_ratio      = profit_info.get("backlog_ratio", 0)
+    unit_storage_cost  = agent_states["all_facilities", "unit_storage_cost"]
+    volume             = agent_states["all_facilities", "volume"]
+    holding_cost       = agent_states["all_facilities", "holding_cost"]
+    backlog_ratio      = agent_states["all_facilities", "backlog_ratio"]
     excess_ratio       = profit_info.get("excess_ratio", 1)
 
     profit       = sale * (selling_price - procurement_cost)
     excess       = procurement_cost * excess * excess_ratio
     order_cost   = order_cost * np.where(replenish > 0, 1, 0)
-    holding_cost = (storage_cost + selling_price * holding_cost_ratio) * in_stocks
+    holding_cost = (holding_cost + unit_storage_cost * volume) * in_stocks
     backlog      = (selling_price - procurement_cost) * (current_demand - sale) * backlog_ratio
     backlog      = np.where(backlog > 0, backlog, 0)
 

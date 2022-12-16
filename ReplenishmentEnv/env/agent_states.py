@@ -90,14 +90,15 @@ class AgentStates(object):
             "vlt",                # Fixed vendor leading time for each sku
             "volume",             # Sku volume, represents how much storage this sku costs.
             "order_cost",         # Cost for each order
-            "storage_cost",       # Storage cost per single sku
-            "holding_cost_ratio", # holding_cost = selling_price * holding_cost_ratio + storage_cost
+            "unit_storage_cost",  # Unit storage cost per single sku
+            "holding_cost",       # Fix holding cost
             "in_stock",           # Stock amount in current step
             "replenish",          # Replenish amount in current step for each sku
             "excess",             # Excess amount for each sku after sales
             "in_transit",         # Sku amount in transit 
             "arrived",            # Arrived amount from upstream
             "accepted",           # Accepted amount
+            "backlog_ratio",      # Backlog = (selling_price - procurement_cost) * (cur_demand - sale) * backlog_ratio
         ]
         return states_items
     
