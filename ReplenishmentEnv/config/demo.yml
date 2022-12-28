@@ -25,11 +25,12 @@ env:
 
 # * Facility info
 facility:
-  - name: store1            # * Facility name
-    initial_balance: 0      # * Init balance for facility. 
-    capacity: 5000          # * Capacity for facility. 
-    upstream: super_vendor  # * Upstream for facility. Super_vendor can provide unlimited skus.
-    downstream: store2      # * Downstream for facility. Consumers represents the actual demand.
+  - name: store1              # * Facility name
+    initial_balance: 0        # * Init balance for facility. 
+    capacity: 5000            # * Capacity for facility. 
+    unit_storage_cost: 0.0001 # * Unit storage cost per volume
+    upstream: super_vendor    # * Upstream for facility. Super_vendor can provide unlimited skus.
+    downstream: store2        # * Downstream for facility. Consumers represents the actual demand.
     sku:
       # Dynamic info that will changed every day. 
       # Each item is interpreted by a single file with columns "Date,SKU0,SKU1,SKU2,..."
@@ -46,12 +47,15 @@ facility:
         order_cost: 10
         volume: 1
         holding_cost: 0.0025
-        unit_storage_cost: 0.00002
+        
         backlog_ratio: 0
       # Necessary feature for skus include:
       # demand, selling_price, procurement_cost, init_stock, vlt, order_cost, 
       # volume, storage_cost and holding_cost_ratio
   - name: store2
+    initial_balance: 0        # * Init balance for facility. 
+    capacity: 5000            # * Capacity for facility. 
+    unit_storage_cost: 0.0001
     upstream: store1
     downstream: consumer
     sku:

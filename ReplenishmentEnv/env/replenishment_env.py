@@ -202,8 +202,9 @@ class ReplenishmentEnv(Env):
         self.warmup_function        = self.config["env"].get("warmup", "replenish_by_last_demand")
 
         # Update info for each facilities
-        self.capacity  = [facility.get("capacity", 1000) for facility in self.config["facility"]]
-        self.balance   = [facility.get("init_balance", 0) for facility in self.config["facility"]]
+        self.capacity          = [facility.get("capacity", 1000) for facility in self.config["facility"]]
+        self.unit_storage_cost = [facility.get("unit_storage_cost", 1000) for facility in self.config["facility"]]
+        self.balance           = [facility.get("init_balance", 0) for facility in self.config["facility"]]
 
         # Get mode related info from mode config
         mode_configs = [mode_config for mode_config in self.config["env"]["mode"] if mode_config["name"] == self.mode]
@@ -362,10 +363,11 @@ class ReplenishmentEnv(Env):
             if upstream == self.supply_chain.get_super_vendor():
                 # If upstream is super_vendor, all replenishment will arrive after vlt dates
                 vlt = self.agent_states[facility, "vlt"]
-                arrived_index = np.array(range(0, int(max(vlt)) + 1, 1)).reshape(-1, 1)
+                max_future = min(int(max(vlt)) + 1, self.durations - self.agent_states.current_step)
+                arrived_index = np.array(range(0, max_future, 1)).reshape(-1, 1)
                 arrived_flag = np.where(arrived_index == vlt, 1, 0)
                 arrived_matrix = arrived_flag * self.agent_states[facility, "replenish"]
-                future_dates = np.array(range(0, int(max(vlt)) + 1, 1)) + self.agent_states.current_step
+                future_dates = np.array(range(0, max_future, 1)) + self.agent_states.current_step
                 self.agent_states[facility, "arrived", future_dates] += arrived_matrix
                 
             else:
@@ -376,11 +378,13 @@ class ReplenishmentEnv(Env):
 
     def get_profit(self) -> Tuple[np.array, dict]:
         profit_info = self.config["profit"]
+        profit_info["unit_storage_cost"] = self.unit_storage_cost
         profit, reward_info = eval(profit_info["profit_function"])(self.agent_states, profit_info)
         return profit, reward_info
 
     def get_reward(self) -> Tuple[np.array, dict]:
         reward_info = self.config["reward"]
+        reward_info["unit_storage_cost"] = self.unit_storage_cost
         rewards, reward_info = eval(reward_info["reward_function"])(self.agent_states, reward_info)
         return rewards, reward_info
 

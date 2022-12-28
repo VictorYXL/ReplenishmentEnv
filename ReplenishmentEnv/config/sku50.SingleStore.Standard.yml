@@ -11,7 +11,7 @@ env:
       end_date: 2019/9/4 
     - name: test
       start_date: 2019/9/5
-      end_date: 2019/12/14
+      end_date: 2019/12/13
   horizon: 100
   lookback_len: 21
   integerization_sku: True
@@ -22,6 +22,7 @@ facility:
   - name: store3
     initial_balance: 0
     capacity: 5000
+    unit_storage_cost: 0.0001
     upstream: super_vendor
     downstream: consumer
     sku:
@@ -37,7 +38,6 @@ facility:
         order_cost: 10
         volume: 1
         holding_cost: 0.0025
-        unit_storage_cost: 0.00002
         backlog_ratio: 0
 
 profit:

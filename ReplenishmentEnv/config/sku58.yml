@@ -21,6 +21,9 @@ env:
 
 facility:
   - name: store
+    initial_balance: 0
+    capacity: 5000
+    unit_storage_cost: 0.0001
     upstream: super_vendor
     downstream: consumer
     sku:
@@ -32,7 +35,6 @@ facility:
         order_cost: 10
         volume: 1
         holding_cost: 0.0025
-        unit_storage_cost: 0.00002
         backlog_ratio: 0
 
 profit:
