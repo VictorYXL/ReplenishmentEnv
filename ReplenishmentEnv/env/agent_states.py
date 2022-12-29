@@ -186,7 +186,7 @@ class AgentStates(object):
             state_index = self.states_to_index[state_item]
             return self.states[facility_id, state_index, date, agent_index]
         elif hasattr(self, "get_{0}".format(state_item)):
-            return eval("self.get_{0}".format(state_item)(facility_id, date, agent_id))
+            return eval("self.get_{0}".format(state_item))(facility_id, date, agent_id)
         else:
             raise NotImplementedError
 
@@ -252,7 +252,7 @@ class AgentStates(object):
             state_index = self.states_to_index[state_item]
             self.states[facility_id, state_index, date, agent_index] = value
         elif hasattr(self, "set_{0}".format(state_item)):
-            eval("self.set_{0}".format(state_item)(value, facility_id, date, agent_id))
+            eval("self.set_{0}".format(state_item))(value, facility_id, date, agent_id)
         else:
             raise NotImplementedError
 

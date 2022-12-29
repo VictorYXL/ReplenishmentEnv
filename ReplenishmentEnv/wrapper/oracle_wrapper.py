@@ -40,7 +40,7 @@ class OracleWrapper(gym.Wrapper):
         return int(np.average(vlts))
     
     def get_in_stock(self, sku="all_agents") -> np.array:
-        return self.env.agent_states["in_stock", "today", sku].copy()
+        return self.env.agent_states["all_facilities", "in_stock", "today", sku].copy()
 
     def get_unit_storage_cost(self, sku="all_agents") -> np.array:
         return self.env.agent_states["storage_cost", "all_dates", sku][self.env.lookback_len:] + \

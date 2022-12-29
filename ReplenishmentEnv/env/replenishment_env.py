@@ -296,11 +296,13 @@ class ReplenishmentEnv(Env):
             if facility != self.supply_chain.get_tail():
                 downstream = self.supply_chain[facility, "downstream"]
                 vlt = self.agent_states[downstream, "vlt"]
-                arrived_index = np.array(range(0, int(max(vlt)) + 1, 1)).reshape(-1, 1)
+                max_future = min(int(max(vlt)) + 1, self.durations - self.agent_states.current_step)
+                arrived_index = np.array(range(0, max_future, 1)).reshape(-1, 1)
                 arrived_flag = np.where(arrived_index == vlt, 1, 0)
                 arrived_matrix = arrived_flag * self.agent_states[facility, "sale"]
-                future_dates = np.array(range(0, int(max(vlt)) + 1, 1)) + self.agent_states.current_step
+                future_dates = np.array(range(0, max_future, 1)) + self.agent_states.current_step
                 self.agent_states[downstream, "arrived", future_dates] += arrived_matrix
+                self.agent_states[downstream, "in_transit"] += sale[self.facility_to_id[facility]]
 
     """
         Receive the arrived sku.
@@ -358,7 +360,6 @@ class ReplenishmentEnv(Env):
         for facility in self.supply_chain.get_facility_list():
             facility_replenish_amount = replenish_amount[self.facility_to_id[facility]]
             self.agent_states[facility, "replenish"] = facility_replenish_amount
-            self.agent_states[facility, "in_transit"] += facility_replenish_amount
             upstream = self.supply_chain[facility, "upstream"]
             if upstream == self.supply_chain.get_super_vendor():
                 # If upstream is super_vendor, all replenishment will arrive after vlt dates
@@ -369,10 +370,12 @@ class ReplenishmentEnv(Env):
                 arrived_matrix = arrived_flag * self.agent_states[facility, "replenish"]
                 future_dates = np.array(range(0, max_future, 1)) + self.agent_states.current_step
                 self.agent_states[facility, "arrived", future_dates] += arrived_matrix
+                self.agent_states[facility, "in_transit"] += facility_replenish_amount
                 
             else:
                 # If upstream is not super_vendor, all replenishment will be sent as demand to upstream
-                self.agent_states[upstream, "demand"] = facility_replenish_amount
+                if self.agent_states.current_step < self.durations - 1:
+                    self.agent_states[upstream, "demand"] = facility_replenish_amount
                 
 
 
