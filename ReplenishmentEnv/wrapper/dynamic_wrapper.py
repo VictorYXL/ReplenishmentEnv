@@ -52,9 +52,9 @@ class DynamicWrapper(DefaultWrapper):
 
     def get_holding_cost(self, facility="all_facilities", sku="all_skus") -> np.array:
         if facility == "all_facilities":
-            unit_storage_cost = [self.env.cupply_chain[facility, "unit_storage_cost"] for facility in self.env.facility_list]
+            unit_storage_cost = [self.env.supply_chain[facility, "unit_storage_cost"] for facility in self.env.facility_list]
         else:
-            unit_storage_cost = self.env.cupply_chain[facility, "unit_storage_cost"]
+            unit_storage_cost = self.env.supply_chain[facility, "unit_storage_cost"]
         basic_holding_cost = self.env.agent_states[facility, "basic_holding_cost", "lookback", sku]
         volume = self.env.agent_states[facility, "volume", "lookback", sku]
         holding_cost = basic_holding_cost + unit_storage_cost * volume
