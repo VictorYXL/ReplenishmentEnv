@@ -8,12 +8,15 @@ import random
 import yaml
 
 
-from ReplenishmentEnv.env.reward_function.rewards import reward1, reward2
-from ReplenishmentEnv.env.warmup_function.warmup import replenish_by_last_demand
+from ReplenishmentEnv.env.helper_function.rewards import reward1, reward2
+from ReplenishmentEnv.env.helper_function.warmup import replenish_by_last_demand
+from ReplenishmentEnv.env.helper_function.convertors import continuous, discrete, demand_mean_continuous, demand_mean_discrete
+from ReplenishmentEnv.env.helper_function.accept import equal_accept
 from ReplenishmentEnv.env.supply_chain import SupplyChain
 from ReplenishmentEnv.env.agent_states import AgentStates
 from ReplenishmentEnv.utility.utility import deep_update
 from ReplenishmentEnv.utility.data_loader import DataLoader
+
 
 class ReplenishmentEnv(Env):
     def __init__(self, config_path, mode="train"):
@@ -200,11 +203,7 @@ class ReplenishmentEnv(Env):
         self.lookback_output_state  = self.config["output_state"].get("lookback_state", [])
         self.action_mode            = self.config["action"].get("mode", "continuous")
         self.warmup_function        = self.config["env"].get("warmup", "replenish_by_last_demand")
-
-        # Update info for each facilities
-        self.capacity          = [facility.get("capacity", 1000) for facility in self.config["facility"]]
-        self.unit_storage_cost = [facility.get("unit_storage_cost", 1000) for facility in self.config["facility"]]
-        self.balance           = [facility.get("init_balance", 0) for facility in self.config["facility"]]
+        self.balance                = [self.supply_chain[facility, "init_balance"] for facility in self.facility_list]
 
         # Get mode related info from mode config
         mode_configs = [mode_config for mode_config in self.config["env"]["mode"] if mode_config["name"] == self.mode]
@@ -312,19 +311,12 @@ class ReplenishmentEnv(Env):
         for facility in self.supply_chain.get_facility_list():
             # Arrived from upstream
             arrived = self.agent_states[facility, "arrived"]
-            total_arrived = sum(arrived)
             self.agent_states[facility, "in_transit"] -= arrived
-
-            # Calculate accept ratio due to the capacity limitation.
-            capacity = self.capacity[self.facility_to_id[facility]]
-            in_stock_volume = np.sum(self.agent_states[facility, "in_stock"] * self.agent_states[facility, "volume"])
-            remaining_space = capacity - in_stock_volume
-            accept_ratio = min(remaining_space / total_arrived, 1.0) if total_arrived > 0 else 0
-
-            # Receive skus by accept ratio
-            accept_amount = arrived * accept_ratio
+            capacity = self.supply_chain[facility, "capacity"]
+            accept_amount = eval(self.supply_chain[facility, "accept_sku"])(arrived, capacity, self.agent_states, facility)
             if self.integerization_sku:
                 accept_amount = np.floor(accept_amount)
+            
             self.agent_states[facility, "excess"] = arrived - accept_amount
             self.agent_states[facility, "accepted"] = accept_amount
             self.agent_states[facility, "in_stock"] += accept_amount
@@ -334,24 +326,7 @@ class ReplenishmentEnv(Env):
         actions: [action_idx/action_quantity] by sku order, defined by action setting in config
     """
     def replenish(self, actions) -> None:
-        action_mode = self.config["action"]["mode"]
-
-        if self.action_mode == "continuous":
-            replenish_amount = actions
-        elif self.action_mode == "discrete":
-            assert("space" in self.config["action"])
-            action_space = np.array(self.config["action"]["space"])
-            replenish_amount = np.round(action_space[actions])
-        elif self.action_mode == "demand_mean_continuous":
-            history_demand_mean = np.average(self.agent_states["all_facilities", "demand", "lookback"], 1)
-            replenish_amount = actions * history_demand_mean
-        elif self.action_mode == "demand_mean_discrete":
-            history_demand_mean = np.average(self.agent_states["all_facilities", "demand", "lookback"], 1)
-            assert("space" in self.config["action"])
-            action_space = np.array(self.config["action"]["space"])
-            replenish_amount = action_space[actions] * history_demand_mean
-        else:
-            raise BaseException("No action mode {} found.".format(action_mode))
+        replenish_amount = eval(self.action_mode)(actions, self.config["action"], self.agent_states)
 
         if self.integerization_sku:
             replenish_amount = np.floor(replenish_amount)
@@ -381,13 +356,13 @@ class ReplenishmentEnv(Env):
 
     def get_profit(self) -> Tuple[np.array, dict]:
         profit_info = self.config["profit"]
-        profit_info["unit_storage_cost"] = self.unit_storage_cost
+        profit_info["unit_storage_cost"] = [self.supply_chain[facility, "unit_storage_cost"] for facility in self.facility_list]
         profit, reward_info = eval(profit_info["profit_function"])(self.agent_states, profit_info)
         return profit, reward_info
 
     def get_reward(self) -> Tuple[np.array, dict]:
         reward_info = self.config["reward"]
-        reward_info["unit_storage_cost"] = self.unit_storage_cost
+        reward_info["unit_storage_cost"] = [self.supply_chain[facility, "unit_storage_cost"] for facility in self.facility_list]
         rewards, reward_info = eval(reward_info["reward_function"])(self.agent_states, reward_info)
         return rewards, reward_info
 

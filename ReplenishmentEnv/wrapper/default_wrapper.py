@@ -39,4 +39,4 @@ class DefaultWrapper(gym.Wrapper):
         return self.env.sku_list.copy()
     
     def get_facility_list(self) -> list:
-        return self.env.supply_chain.facility_list.copy()
+        return self.env.facility_list.copy()

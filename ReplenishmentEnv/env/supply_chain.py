@@ -31,6 +31,10 @@ class SupplyChain:
             self.facility_dict[facility["name"]] = {
                 "upstream": facility["upstream"],
                 "downstream": facility["downstream"],
+                "capacity": facility.get("capacity", 0),
+                "init_balance": facility.get("init_balance", 0),
+                "unit_storage_cost": facility.get("unit_storage_cost", 0),
+                "accept_sku": facility.get("accept_sku", "equal_accept")
             }
 
         # Check for supply chain
@@ -45,7 +49,7 @@ class SupplyChain:
                 assert(self.facility_dict[self.facility_dict[facility]["downstream"]]["upstream"] == facility)
 
     # index = [facility_name, item].
-    # item includes upstream, downstream and capacity
+    # item includes upstream, downstream, capacity, init_balance and unit_storage_cost
     def __getitem__(self, index):
         assert(isinstance(index, tuple))
         assert(len(index) == 2)
