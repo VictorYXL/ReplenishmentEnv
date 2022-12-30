@@ -37,7 +37,7 @@ facility:
       shared_data:
         order_cost: 10
         volume: 1
-        holding_cost: 0.0025
+        basic_holding_cost: 0.0025
         backlog_ratio: 0
 
 profit:

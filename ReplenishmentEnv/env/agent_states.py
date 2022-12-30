@@ -91,7 +91,7 @@ class AgentStates(object):
             "volume",             # Sku volume, represents how much storage this sku costs.
             "order_cost",         # Cost for each order
             "unit_storage_cost",  # Unit storage cost per single sku
-            "holding_cost",       # Fix holding cost
+            "basic_holding_cost", # Fix basic holding cost for each sku
             "in_stock",           # Stock amount in current step
             "replenish",          # Replenish amount in current step for each sku
             "excess",             # Excess amount for each sku after sales

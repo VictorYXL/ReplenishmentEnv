@@ -46,12 +46,11 @@ facility:
       shared_data:
         order_cost: 10
         volume: 1
-        holding_cost: 0.0025
-        
+        basic_holding_cost: 0.0025
         backlog_ratio: 0
       # Necessary feature for skus include:
       # demand, selling_price, procurement_cost, init_stock, vlt, order_cost, 
-      # volume, storage_cost and holding_cost_ratio
+      # volume, storage_cost and basic_holding_cost
   - name: store2
     initial_balance: 0        # * Init balance for facility. 
     capacity: 5000            # * Capacity for facility. 
@@ -71,7 +70,7 @@ facility:
         order_cost: 10
         volume: 1
         storage_cost: 0.0025
-        holding_cost_ratio: 0.00002
+        basic_holding_cost: 0.00002
         backlog_ratio: 0
 
 # * profit setting. profit is internal in env.

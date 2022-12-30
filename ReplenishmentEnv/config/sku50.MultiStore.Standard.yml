@@ -35,7 +35,7 @@ facility:
       shared_data:
         order_cost: 10
         volume: 1
-        holding_cost: 0.0025
+        basic_holding_cost: 0.0025
         backlog_ratio: 0
   - name: store2
     initial_balance: 0
@@ -53,7 +53,7 @@ facility:
       shared_data:
         order_cost: 10
         volume: 1
-        holding_cost: 0.0025
+        basic_holding_cost: 0.0025
         backlog_ratio: 0
   - name: store3
     initial_balance: 0
@@ -73,7 +73,7 @@ facility:
       shared_data:
         order_cost: 10
         volume: 1
-        holding_cost: 0.0025
+        basic_holding_cost: 0.0025
         backlog_ratio: 0
 
 profit:
