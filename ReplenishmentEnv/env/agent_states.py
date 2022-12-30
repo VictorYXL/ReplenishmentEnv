@@ -14,7 +14,7 @@ Use agent_states[facility_name, state_item, date, agent_id] to get the spaicel s
         - lookback_with_current: get state in lookback_len - 1 history days with current step.
         - all_dates: get state for all dataes.
     - agent_id: set agent_id to get the target agent info.
-        - all_agents: get state for all skus. Default is all_agents.
+        - all_skus: get state for all skus. Default is all_skus.
 For the state which is not stated in state matrix, difinite the get_/set_/init_ function to realize it.
 """
 class AgentStates(object):
@@ -132,12 +132,12 @@ class AgentStates(object):
             facility_name = index[0]
             state_item = index[1]
             date = "today"
-            agent_id = "all_agents"
+            agent_id = "all_skus"
         elif len(index) == 3:
             facility_name = index[0]
             state_item = index[1]
             date = index[2]
-            agent_id = "all_agents"
+            agent_id = "all_skus"
         elif len(index) == 4:
             facility_name = index[0]
             state_item = index[1]
@@ -176,7 +176,7 @@ class AgentStates(object):
         if isinstance(date, int):
             assert(date >= 0 and date < self.durations + self.lookback_len)
 
-        if agent_id == "all_agents":
+        if agent_id == "all_skus":
             agent_index = slice(None, None, None)
         else:
             assert(agent_id in self.agent_id_to_index)
@@ -199,12 +199,12 @@ class AgentStates(object):
             facility_name = index[0]
             state_item = index[1]
             date = "today"
-            agent_id = "all_agents"
+            agent_id = "all_skus"
         elif len(index) == 3:
             facility_name = index[0]
             state_item = index[1]
             date = index[2]
-            agent_id = "all_agents"
+            agent_id = "all_skus"
         elif len(index) == 4:
             facility_name = index[0]
             state_item = index[1]
@@ -242,7 +242,7 @@ class AgentStates(object):
         if isinstance(date, int):
             assert(date >= 0 and date < self.durations + self.lookback_len)
 
-        if agent_id == "all_agents":
+        if agent_id == "all_skus":
             agent_index = slice(None, None, None)
         else:
             assert(agent_id in self.agent_id_to_index)

@@ -1,13 +1,14 @@
 import numpy as np 
 import gym
 from typing import Tuple
+from ReplenishmentEnv.wrapper.default_wrapper import DefaultWrapper
 
 
 """
     DynamicWrapper provides the lookback info,
     including oracle selling_price, procurement_cost, demand, vlt and unit_storage_cost.
 """
-class DynamicWrapper(gym.Wrapper):
+class DynamicWrapper(DefaultWrapper):
     def __init__(self, env: gym.Env) -> None:
         self.env = env
     
@@ -23,19 +24,19 @@ class DynamicWrapper(gym.Wrapper):
     def reset(self, update_config:dict = None) -> None:
         self.env.reset(update_config)
     
-    def get_selling_price(self, facility="all_facilities", sku="all_agents") -> np.array:
+    def get_selling_price(self, facility="all_facilities", sku="all_skus") -> np.array:
         return self.env.agent_states[facility, "selling_price", "lookback", sku].copy()
     
-    def get_procurement_cost(self, facility="all_facilities", sku="all_agents") -> np.array:
+    def get_procurement_cost(self, facility="all_facilities", sku="all_skus") -> np.array:
         return self.env.agent_states[facility, "procurement_cost", "lookback", sku].copy()
 
-    def get_sale(self, facility="all_facilities", sku="all_agents") -> np.array:
+    def get_sale(self, facility="all_facilities", sku="all_skus") -> np.array:
         return self.env.agent_states[facility, "sale", "lookback", sku].copy()
 
-    def get_demand(self, facility="all_facilities", sku="all_agents") -> np.array:
+    def get_demand(self, facility="all_facilities", sku="all_skus") -> np.array:
         return self.env.agent_states[facility, "demand", "lookback", sku].copy()
     
-    def get_average_vlt(self, facility="all_facilities", sku="all_agents") -> np.array:
+    def get_average_vlt(self, facility="all_facilities", sku="all_skus") -> np.array:
         vlts = self.env.agent_states[facility, "vlt", "lookback", sku]
         if facility== "all_facilities":
             average_vlt = int(np.average(vlts, 1))
@@ -43,13 +44,16 @@ class DynamicWrapper(gym.Wrapper):
             average_vlt = int(np.average(vlts, 0))
         return average_vlt
     
-    def get_in_stock(self, facility="all_facilities", sku="all_agents") -> np.array:
+    def get_in_stock(self, facility="all_facilities", sku="all_skus") -> np.array:
         return self.env.agent_states[facility, "in_stock", "lookback", sku].copy()
 
-    def get_unit_storage_cost(self, facility="all_facilities", sku="all_agents") -> np.array:
+    def get_in_transit(self, facility="all_facilities", sku="all_skus") -> np.array:
+        return self.env.agent_states[facility, "get_in_transit", "lookback", sku].copy()
+
+    def get_unit_storage_cost(self, facility="all_facilities", sku="all_skus") -> np.array:
         return self.env.agent_states[facility, "holding_cost", "lookback", sku] + \
             self.env.agent_states[facility, "unit_storage_cost", "lookback", sku]* \
             self.env.agent_states[facility, "volume", "lookback", sku]
     
-    def get_replenishment_before(self, facility="all_facilities", sku="all_agents") -> np.array:
+    def get_replenishment_before(self, facility="all_facilities", sku="all_skus") -> np.array:
         return self.env.agent_states[facility, "replenish", "history", sku][-self.get_average_vlt(sku):]
