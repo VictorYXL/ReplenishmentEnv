@@ -29,6 +29,7 @@ facility:
     initial_balance: 0        # * Init balance for facility. 
     capacity: 5000            # * Capacity for facility. 
     unit_storage_cost: 0.0001 # * Unit storage cost per volume
+    accept_sku: equal_accept         # Aeecpt sku funtion when excess the capacity limitaion. Default is equal_accept.
     upstream: super_vendor    # * Upstream for facility. Super_vendor can provide unlimited skus.
     downstream: store2        # * Downstream for facility. Consumers represents the actual demand.
     sku:
@@ -52,9 +53,10 @@ facility:
       # demand, selling_price, procurement_cost, init_stock, vlt, order_cost, 
       # volume, storage_cost and basic_holding_cost
   - name: store2
-    initial_balance: 0        # * Init balance for facility. 
-    capacity: 5000            # * Capacity for facility. 
+    initial_balance: 0 
+    capacity: 5000 
     unit_storage_cost: 0.0001
+    accept_sku: equal_accept
     upstream: store1
     downstream: consumer
     sku:
