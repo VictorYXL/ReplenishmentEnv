@@ -44,11 +44,6 @@ class DynamicWrapper(DefaultWrapper):
             average_vlt = int(np.average(vlts, 0))
         return average_vlt
     
-    def get_in_stock(self, facility="all_facilities", sku="all_skus") -> np.array:
-        return self.env.agent_states[facility, "in_stock", "lookback", sku].copy()
-
-    def get_in_transit(self, facility="all_facilities", sku="all_skus") -> np.array:
-        return self.env.agent_states[facility, "get_in_transit", "lookback", sku].copy()
 
     def get_holding_cost(self, facility="all_facilities", sku="all_skus") -> np.array:
         if facility == "all_facilities":
@@ -61,4 +56,13 @@ class DynamicWrapper(DefaultWrapper):
         return holding_cost
     
     def get_replenishment_before(self, facility="all_facilities", sku="all_skus") -> np.array:
-        return self.env.agent_states[facility, "replenish", "history", sku][-self.get_average_vlt(facility, sku):]
+        replenishment = self.env.agent_states[facility, "replenish", "history", sku]
+        vlt = self.get_average_vlt(facility, sku)
+        replenishment_before = replenishment[-self.lookback_len-vlt:-self.lookback_len]
+        return replenishment_before
+    
+    def get_in_stock(self, facility="all_facilities", sku="all_skus") -> np.array:
+        return self.env.agent_states[facility, "in_stock", "today", sku].copy()
+
+    def get_in_transit(self, facility="all_facilities", sku="all_skus") -> np.array:
+        return self.env.agent_states[facility, "in_transit", "today", sku].copy()

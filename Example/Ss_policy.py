@@ -26,11 +26,13 @@ def Ss_policy(env, S, s):
 if __name__ == "__main__":
     env_name = "sku50.MultiStore.Standard"
     env = make_env(env_name, "DefaultWrapper", "test")
+    rewards = Ss_policy(env, [[1.0] * 50] * 3, [[1.0] * 50] * 3)
+    print(np.sum(rewards, 1))
     rewards = Ss_policy(env, [[4.0] * 50] * 3, [[4.0] * 50] * 3)
-    print(np.sum(rewards, 1))   # 461294.8508 679401.6854 606858.4326]
+    print(np.sum(rewards, 1))
     rewards = Ss_policy(env, [[3.5] * 50] * 3, [[3.5] * 50] * 3)
-    print(np.sum(rewards, 1))   # 518701.9036 617936.1934 556545.9074
+    print(np.sum(rewards, 1))
     rewards = Ss_policy(env, [[3.0] * 50] * 3, [[3.0] * 50] * 3)
-    print(np.sum(rewards, 1))   # 449359.4684 526129.107  485747.0012
+    print(np.sum(rewards, 1))
     rewards = Ss_policy(env, [[3.5] * 50, [3.5] * 50, [4.0] * 50], [[3.0] * 50, [3.5] * 50, [4.0] * 50])
-    print(np.sum(rewards, 1))   # 570439.9032 680407.048  599142.1822
+    print(np.sum(rewards, 1))

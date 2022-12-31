@@ -21,7 +21,7 @@ env:
 facility:
   - name: store3
     initial_balance: 0
-    capacity: 5000
+    capacity: 10000
     unit_storage_cost: 0.0001
     accept_sku: equal_accept
     upstream: super_vendor
