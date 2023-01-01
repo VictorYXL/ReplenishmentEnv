@@ -14,25 +14,32 @@ env:
   horizon: 100
   lookback_len: 21
   integerization_sku: True
-  storage_capacity: 5800
+  capacity: 5800
   initial_balance: 0
   warmup: replenish_by_last_demand
-
-sku:
   sku_list: ReplenishmentEnv/data/sku58/sku58.sku_list.csv
-  dynamic_info: 
-    - name: demand
-      file: ReplenishmentEnv/data/sku58/sku58.demand.csv
-  static_info: ReplenishmentEnv/data/sku58/sku58.info.csv
-  shared_info:
-    order_cost: 10
-    volume: 1
-    storage_cost: 0.0025
-    holding_cost_ratio: 0.00002
+
+facility:
+  - name: store
+    initial_balance: 0
+    capacity: 5000
+    unit_storage_cost: 0.0001
+    accept_sku: equal_accept
+    upstream: super_vendor
+    downstream: consumer
+    sku:
+      dynamic_data: 
+        - name: demand
+          file: ReplenishmentEnv/data/sku58/sku58.demand.csv
+      static_data: ReplenishmentEnv/data/sku58/sku58.info.csv
+      shared_data:
+        order_cost: 10
+        volume: 1
+        holding_cost: 0.0025
+        backlog_ratio: 0
 
 profit:
   profit_function: reward2
-  backlog_ratio: 0
   excess_ratio: 0.5
 
 reward:

@@ -21,15 +21,22 @@ class DefaultWrapper(gym.Wrapper):
         return self.env.reset(update_config)
    
     # get demean mean by last lookback_len days.
-    def get_demand_mean(self) -> np.array:
-        mean_demand = np.average(self.agent_states["demand", "lookback"], 0)
+    def get_demand_mean(self, facility="all_facilities", sku="all_skus") -> np.array:
+        demand = self.agent_states["all_facilities", "demand", "lookback"]
+        if facility == "all_facilities":
+            mean_demand = np.average(demand, 1)
+        else:
+            mean_demand = np.average(demand, 0)
         return mean_demand
     
-    def get_in_stock(self) -> np.array:
-        return self.agent_states["in_stock"].copy()
+    def get_in_stock(self, facility="all_facilities", sku="all_skus") -> np.array:
+        return self.agent_states[facility, "in_stock", "today", sku].copy()
 
-    def get_in_transit(self) -> np.array:
-        return self.agent_states["in_transit"].copy()
+    def get_in_transit(self, facility="all_facilities", sku="all_skus") -> np.array:
+        return self.agent_states[facility, "in_transit", "today", sku].copy()
 
-    def get_sku_list(self) -> np.array:
+    def get_sku_list(self) -> list:
         return self.env.sku_list.copy()
+    
+    def get_facility_list(self) -> list:
+        return self.env.facility_list.copy()
