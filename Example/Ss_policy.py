@@ -21,28 +21,28 @@ def Ss_policy(env, S, s, exp_name=None):
         action = np.where(action < s, S - action, 0)
         state, reward, done, info = env.step(action)
         rewards += reward
-    return rewards
+    return info["balance"]
 
 if __name__ == "__main__":
     env_name = "sku50.MultiStore.Standard"
     env = make_env(env_name, "DefaultWrapper", "test")
 
     exp_name = "Ss_policy_S1.0_s1.0"
-    rewards = Ss_policy(env, [[1.0] * 50] * 3, [[1.0] * 50] * 3, exp_name)
-    print(np.sum(rewards, 1))
+    balance = Ss_policy(env, [[1.0] * 50] * 3, [[1.0] * 50] * 3, exp_name)
     env.render()
+    print(balance)  # 42427.1625 47639.125  28938.5375]
 
     exp_name = "Ss_policy_S3.5_s3.5"
-    rewards = Ss_policy(env, [[3.5] * 50] * 3, [[3.5] * 50] * 3, exp_name)
-    print(np.sum(rewards, 1))
+    balance = Ss_policy(env, [[3.5] * 50] * 3, [[3.5] * 50] * 3, exp_name)
     env.render()
+    print(balance)  # 539054.1    615175.0125 536784.15
 
     exp_name = "Ss_policy_S4.0_s4.0"
-    rewards = Ss_policy(env, [[4.0] * 50] * 3, [[4.0] * 50] * 3, exp_name)
-    print(np.sum(rewards, 1))
+    balance = Ss_policy(env, [[4.0] * 50] * 3, [[4.0] * 50] * 3, exp_name)
     env.render()
+    print(balance)  # 597919.8375 684820.125  592711.1375
 
     exp_name = "Ss_policy_Ss_best"
-    rewards = Ss_policy(env, [[3.5] * 50, [3.5] * 50, [4.0] * 50], [[3.0] * 50, [3.5] * 50, [4.0] * 50], exp_name)
-    print(np.sum(rewards, 1))
+    balance = Ss_policy(env, [[3.5] * 50, [3.5] * 50, [4.0] * 50], [[3.0] * 50, [3.5] * 50, [4.0] * 50], exp_name)
     env.render()
+    print(balance)  # 589575.425  666595.7    585118.1125

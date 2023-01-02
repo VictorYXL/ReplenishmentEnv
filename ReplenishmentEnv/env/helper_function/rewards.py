@@ -31,6 +31,7 @@ def reward1(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
 
     reward       = income - outcome - order_cost - holding_cost - backlog_cost
     reward_info = {
+        "reward":       reward,
         "income":       income,
         "outcome":      outcome,
         "order_cost":   order_cost,
@@ -38,7 +39,7 @@ def reward1(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
         "backlog_cost": backlog_cost,
     }
 
-    return reward, reward_info
+    return reward_info
 
 """
     reward2: calculate the cost when sale.
@@ -73,6 +74,7 @@ def reward2(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
 
     reward      = profit - excess_cost - order_cost - holding_cost - backlog_cost
     reward_info = {
+        "reward":       reward,
         "profit":       profit,
         "excess_cost":  excess_cost,
         "order_cost":   order_cost,
@@ -80,4 +82,4 @@ def reward2(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
         "backlog_cost": backlog_cost,
     }
 
-    return reward, reward_info
+    return reward_info

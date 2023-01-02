@@ -286,11 +286,11 @@ class ReplenishmentEnv(Env):
         self.replenish(actions)
         self.sell()
         self.receive_sku()
-        self.profit, _ = self.get_profit()
+        self.profit, _ = self.get_reward(self.config["profit_function"])
         self.balance += np.sum(self.profit, axis=1)
 
         states = self.get_state()
-        rewards, reward_info = self.get_reward()
+        rewards, reward_info = self.get_reward(self.config["reward_function"])
         self.reward_info_list.append(reward_info)
         infos = self.get_info()
         infos["reward_info"] = reward_info
@@ -372,18 +372,12 @@ class ReplenishmentEnv(Env):
                 if self.agent_states.current_step < self.durations - 1:
                     self.agent_states[upstream, "demand"] = facility_replenish_amount
 
-    def get_profit(self) -> Tuple[np.array, dict]:
-        profit_info = {
-            "unit_storage_cost": [self.supply_chain[facility, "unit_storage_cost"] for facility in self.facility_list]
-        }
-        profit, reward_info = eval(self.config["profit_function"])(self.agent_states, profit_info)
-        return profit, reward_info
-
-    def get_reward(self) -> Tuple[np.array, dict]:
+    def get_reward(self, function) -> Tuple[np.array, dict]:
         reward_info = {
             "unit_storage_cost": [self.supply_chain[facility, "unit_storage_cost"] for facility in self.facility_list]
         }
-        rewards, reward_info = eval(self.config["reward_function"])(self.agent_states, reward_info)
+        reward_info = eval(self.config["reward_function"])(self.agent_states, reward_info)
+        rewards = reward_info["reward"]
         return rewards, reward_info
 
     # Output M * N matrix: M is state count and N is agent count

@@ -1,6 +1,7 @@
 from ReplenishmentEnv.env.replenishment_env import ReplenishmentEnv
 from ReplenishmentEnv.wrapper.default_wrapper import DefaultWrapper
 from ReplenishmentEnv.wrapper.dynamic_wrapper import DynamicWrapper
+from ReplenishmentEnv.wrapper.static_wrapper import StaticWrapper
 import os
 
 all = ["make_env"]
@@ -13,6 +14,8 @@ def make_env(config_name, wrapper_name="DefaultWrapper", mode="train"):
         env = DefaultWrapper(env)
     elif wrapper_name == "DynamicWrapper":
         env = DynamicWrapper(DefaultWrapper(env))
+    elif wrapper_name == "StaticWrapper":
+        env = StaticWrapper(DefaultWrapper(env))
     else:
         raise NotImplementedError
     return env
