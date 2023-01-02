@@ -1,4 +1,5 @@
 import copy
+import os
 from datetime import datetime, timedelta
 from gym import Env, spaces
 from typing import Tuple
@@ -15,6 +16,7 @@ from ReplenishmentEnv.env.helper_function.accept import equal_accept
 from ReplenishmentEnv.env.supply_chain import SupplyChain
 from ReplenishmentEnv.env.agent_states import AgentStates
 from ReplenishmentEnv.utility.utility import deep_update
+from ReplenishmentEnv.utility.visualizer import Visualizer
 from ReplenishmentEnv.utility.data_loader import DataLoader
 
 
@@ -70,10 +72,11 @@ class ReplenishmentEnv(Env):
         assert("mode" in self.config["env"])
         assert("sku_list" in self.config["env"])
         assert("facility" in self.config)
-        assert("profit" in self.config)
-        assert("reward" in self.config)
+        assert("profit_function" in self.config)
+        assert("reward_function" in self.config)
         assert("output_state" in self.config)
         assert("action" in self.config)
+        assert("visualization" in self.config)
 
     """
         Build supply chain
@@ -184,13 +187,13 @@ class ReplenishmentEnv(Env):
         All items except sku data can be updated.
         To avoid the obfuscation, update_config is only needed when reset with update
     """
-    def reset(self, update_config:dict = None) -> None:
+    def reset(self, exp_name = None, update_config:dict = None) -> None:
         if update_config is not None:
             self.config = deep_update(self.config, update_config)
         self.init_env()
         self.init_data()
         self.init_state()
-        self.init_monitor()
+        self.init_monitor(exp_name)
         eval(format(self.warmup_function))(self)
         states = self.get_state()
         return states  
@@ -252,8 +255,27 @@ class ReplenishmentEnv(Env):
             self.lookback_len,
         )
 
-    def init_monitor(self) -> None:
-        pass
+    def init_monitor(self, exp_name=None) -> None:
+        output_dir = self.config["visualization"].get("output_dir", "output")
+        time = datetime.now().strftime('%Y%m%d_%H%M%S')
+        if exp_name != None:
+            output_dir = os.path.join(output_dir, exp_name, time)
+        else:
+            output_dir = os.path.join(output_dir, time)
+        state_items = self.config["visualization"].get("state", ["replenish", "demand"])
+        self.reward_info_list = []
+        self.visualizer = Visualizer(
+            self.agent_states, 
+            self.reward_info_list,
+            self.picked_start_date, 
+            self.sku_list, 
+            self.facility_list,
+            state_items,
+            output_dir,
+            self.lookback_len
+        )
+        
+
 
     """
         Step orders: Replenish -> Sell -> Receive arrived skus -> Update balance
@@ -264,14 +286,12 @@ class ReplenishmentEnv(Env):
         self.replenish(actions)
         self.sell()
         self.receive_sku()
-        self.profit, reward_info = self.get_profit()
+        self.profit, _ = self.get_profit()
         self.balance += np.sum(self.profit, axis=1)
 
         states = self.get_state()
-        if self.config["reward"].get("mode", None) == "same_as_profit":
-            rewards = self.profit 
-        else:
-            rewards, reward_info = self.get_reward()
+        rewards, reward_info = self.get_reward()
+        self.reward_info_list.append(reward_info)
         infos = self.get_info()
         infos["reward_info"] = reward_info
 
@@ -351,19 +371,19 @@ class ReplenishmentEnv(Env):
                 # If upstream is not super_vendor, all replenishment will be sent as demand to upstream
                 if self.agent_states.current_step < self.durations - 1:
                     self.agent_states[upstream, "demand"] = facility_replenish_amount
-                
-
 
     def get_profit(self) -> Tuple[np.array, dict]:
-        profit_info = self.config["profit"]
-        profit_info["unit_storage_cost"] = [self.supply_chain[facility, "unit_storage_cost"] for facility in self.facility_list]
-        profit, reward_info = eval(profit_info["profit_function"])(self.agent_states, profit_info)
+        profit_info = {
+            "unit_storage_cost": [self.supply_chain[facility, "unit_storage_cost"] for facility in self.facility_list]
+        }
+        profit, reward_info = eval(self.config["profit_function"])(self.agent_states, profit_info)
         return profit, reward_info
 
     def get_reward(self) -> Tuple[np.array, dict]:
-        reward_info = self.config["reward"]
-        reward_info["unit_storage_cost"] = [self.supply_chain[facility, "unit_storage_cost"] for facility in self.facility_list]
-        rewards, reward_info = eval(reward_info["reward_function"])(self.agent_states, reward_info)
+        reward_info = {
+            "unit_storage_cost": [self.supply_chain[facility, "unit_storage_cost"] for facility in self.facility_list]
+        }
+        rewards, reward_info = eval(self.config["reward_function"])(self.agent_states, reward_info)
         return rewards, reward_info
 
     # Output M * N matrix: M is state count and N is agent count
@@ -387,6 +407,5 @@ class ReplenishmentEnv(Env):
         self.current_step += 1
         self.agent_states.next_step()
 
-    # TODO
     def render(self, mode: str="human", close: bool=False) -> None:
-        pass
+        self.visualizer.render()

@@ -1,8 +1,8 @@
 import numpy as np
 
 """
-Numpy based matrix to store the state for all stores and agents.
-Use agent_states[facility_name, state_item, date, agent_id] to get the spaicel state for special agent and special day.
+Numpy based matrix to store the state for all stores and skus.
+Use sku_states[facility_name, state_item, date, sku_id] to get the spaicel state for special sku and special day.
     - facility_name: Necessary item for target store. All facility_name can be found in get_all_stores().
     - state_item: Necessary item for target state. All state_item can be found in get_state_items().
     - date: set date to get state in special date.`
@@ -13,21 +13,21 @@ Use agent_states[facility_name, state_item, date, agent_id] to get the spaicel s
         - lookback: get state in lookback_len history days.
         - lookback_with_current: get state in lookback_len - 1 history days with current step.
         - all_dates: get state for all dataes.
-    - agent_id: set agent_id to get the target agent info.
+    - sku_id: set sku_id to get the target sku info.
         - all_skus: get state for all skus. Default is all_skus.
 For the state which is not stated in state matrix, difinite the get_/set_/init_ function to realize it.
 """
 class AgentStates(object):
     def __init__(
             self, 
-            agent_ids: list, 
+            sku_ids: list, 
             durations: int=0,
             data: list=None, 
             lookback_len: int=7, 
         ) -> None:
         self.facility_list = [facility["facility_name"] for facility in data]
-        self.agent_ids = agent_ids
-        self.agents_count = len(self.agent_ids)
+        self.sku_ids = sku_ids
+        self.skus_count = len(self.sku_ids)
         self.states_items = self.get_state_items()
         self.inherited_states_items = self.get_inherited_items()
         self.init_0_items = self.get_init_0_items()
@@ -42,20 +42,20 @@ class AgentStates(object):
         self.durations = durations
     
         # Facility name to index dict.
-        self.facility_to_index = {facility_name: index for index, facility_name in enumerate(self.facility_list)}
+        self.facility_to_id = {facility_name: index for index, facility_name in enumerate(self.facility_list)}
 
-        # Agent id to index dict.
-        self.agent_id_to_index = {agent_id: index for index, agent_id in enumerate(self.agent_ids)}
+        # Sku name to index dict.
+        self.sku_to_id = {sku_id: index for index, sku_id in enumerate(self.sku_ids)}
 
         # State to index dict.
-        self.states_to_index = {state: index for index, state in enumerate(self.states_items)}
+        self.states_to_id = {state: index for index, state in enumerate(self.states_items)}
     
-        # C * M * D * N: N , C facility count, M state item count, D dates count, N agent count
+        # C * M * D * N: N , C facility count, M state item count, D dates count, N sku count
         self.states = np.zeros((
             len(self.facility_list),
             len(self.states_items),
             self.durations + self.lookback_len,
-            len(self.agent_ids)
+            len(self.sku_ids)
         ))
 
         # Init the state in order as: dynamic state, static_state, shared_state and default value
@@ -76,7 +76,7 @@ class AgentStates(object):
                 self.__setitem__([facility_data["facility_name"], item, "all_dates"], value)
 
     def __len__ (self):
-        return len(self.agent_ids)
+        return len(self.sku_ids)
 
     """
         All state items values
@@ -89,11 +89,12 @@ class AgentStates(object):
             "sale",               # SKU sale amount in env 
             "vlt",                # Fixed vendor leading time for each sku
             "volume",             # Sku volume, represents how much storage this sku costs.
-            "order_cost",         # Cost for each order
+            "unit_order_cost",    # Cost for single order
             "basic_holding_cost", # Fix basic holding cost for each sku
             "in_stock",           # Stock amount in current step
             "replenish",          # Replenish amount in current step for each sku
             "excess",             # Excess amount for each sku after sales
+            "excess_ratio",       # Cost ratio due to excess
             "in_transit",         # Sku amount in transit 
             "arrived",            # Arrived amount from upstream
             "accepted",           # Accepted amount
@@ -131,23 +132,23 @@ class AgentStates(object):
             facility_name = index[0]
             state_item = index[1]
             date = "today"
-            agent_id = "all_skus"
+            sku_id = "all_skus"
         elif len(index) == 3:
             facility_name = index[0]
             state_item = index[1]
             date = index[2]
-            agent_id = "all_skus"
+            sku_id = "all_skus"
         elif len(index) == 4:
             facility_name = index[0]
             state_item = index[1]
             date = index[2]
-            agent_id = index[3]
+            sku_id = index[3]
 
         if facility_name == "all_facilities":
             facility_id = slice(None, None, None)
         else:
-            assert(facility_name in self.facility_to_index)
-            facility_id = self.facility_to_index[facility_name]
+            assert(facility_name in self.facility_to_id)
+            facility_id = self.facility_to_id[facility_name]
 
         if isinstance(date, str):
             # Due to warmup, today date index = current_step + lookback_len
@@ -175,17 +176,17 @@ class AgentStates(object):
         if isinstance(date, int):
             assert(date >= 0 and date < self.durations + self.lookback_len)
 
-        if agent_id == "all_skus":
-            agent_index = slice(None, None, None)
+        if sku_id == "all_skus":
+            sku_index = slice(None, None, None)
         else:
-            assert(agent_id in self.agent_id_to_index)
-            agent_index = self.agent_id_to_index[agent_id]
+            assert(sku_id in self.sku_to_id)
+            sku_index = self.sku_to_id[sku_id]
 
         if state_item in self.states_items:
-            state_index = self.states_to_index[state_item]
-            return self.states[facility_id, state_index, date, agent_index]
+            state_index = self.states_to_id[state_item]
+            return self.states[facility_id, state_index, date, sku_index]
         elif hasattr(self, "get_{0}".format(state_item)):
-            return eval("self.get_{0}".format(state_item))(facility_id, date, agent_id)
+            return eval("self.get_{0}".format(state_item))(facility_id, date, sku_id)
         else:
             raise NotImplementedError
 
@@ -198,23 +199,23 @@ class AgentStates(object):
             facility_name = index[0]
             state_item = index[1]
             date = "today"
-            agent_id = "all_skus"
+            sku_id = "all_skus"
         elif len(index) == 3:
             facility_name = index[0]
             state_item = index[1]
             date = index[2]
-            agent_id = "all_skus"
+            sku_id = "all_skus"
         elif len(index) == 4:
             facility_name = index[0]
             state_item = index[1]
             date = index[2]
-            agent_id = index[3]
+            sku_id = index[3]
 
         if facility_name == "all_facilities":
             facility_id = slice(None, None, None)
         else:
-            assert(facility_name in self.facility_to_index)
-            facility_id = self.facility_to_index[facility_name]
+            assert(facility_name in self.facility_to_id)
+            facility_id = self.facility_to_id[facility_name]
         
         if isinstance(date, str):
             # Due to warmup, today date index = current_step + lookback_len
@@ -241,17 +242,17 @@ class AgentStates(object):
         if isinstance(date, int):
             assert(date >= 0 and date < self.durations + self.lookback_len)
 
-        if agent_id == "all_skus":
-            agent_index = slice(None, None, None)
+        if sku_id == "all_skus":
+            sku_index = slice(None, None, None)
         else:
-            assert(agent_id in self.agent_id_to_index)
-            agent_index = self.agent_id_to_index[agent_id]
+            assert(sku_id in self.sku_to_id)
+            sku_index = self.sku_to_id[sku_id]
             
         if state_item in self.states_items:
-            state_index = self.states_to_index[state_item]
-            self.states[facility_id, state_index, date, agent_index] = value
+            state_index = self.states_to_id[state_item]
+            self.states[facility_id, state_index, date, sku_index] = value
         elif hasattr(self, "set_{0}".format(state_item)):
-            eval("self.set_{0}".format(state_item))(value, facility_id, date, agent_id)
+            eval("self.set_{0}".format(state_item))(value, facility_id, date, sku_id)
         else:
             raise NotImplementedError
 
@@ -272,14 +273,14 @@ class AgentStates(object):
         # First date
         first_value = facility_data["static_data"].get("init_stock", 0).to_numpy().reshape(1, -1)
         # Rest dates
-        rest_value = (np.ones((self.durations + self.lookback_len - 1, self.agents_count)) * np.nan)
+        rest_value = (np.ones((self.durations + self.lookback_len - 1, self.skus_count)) * np.nan)
         value = np.concatenate([first_value, rest_value])
         return value
     
-    # Output M * N matrix: M is state count and N is agent count
+    # Output M * N matrix: M is state count and N is sku count
     # TODO: Update to multi-facility_list
     def snapshot(self, current_state_items, lookback_state_items):
-        states_list = [self.__getitem__(item).reshape(1, self.agents_count).copy() for item in current_state_items]
+        states_list = [self.__getitem__(item).reshape(1, self.skus_count).copy() for item in current_state_items]
         for item in lookback_state_items:
             state = self.__getitem__([item, "lookback_with_current"]).copy()
             states_list.append(state)
