@@ -27,8 +27,8 @@ env:
 facility:
   - name: store1              # * Facility name
     initial_balance: 0        # * Init balance for facility. 
-    capacity: 5000            # * Capacity for facility. 
-    unit_storage_cost: 0.0001 # * Unit storage cost per volume
+    capacity: 10000            # * Capacity for facility. 
+    unit_storage_cost: 0.01   # * Unit storage cost per volume
     accept_sku: equal_accept         # Aeecpt sku funtion when excess the capacity limitaion. Default is equal_accept.
     upstream: super_vendor    # * Upstream for facility. Super_vendor can provide unlimited skus.
     downstream: store2        # * Downstream for facility. Consumers represents the actual demand.
@@ -45,17 +45,18 @@ facility:
       static_data: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
       # Shared info that all skus has the same value for some feature and will not changed.
       shared_data:
-        order_cost: 10
+        unit_order_cost: 10
         volume: 1
         basic_holding_cost: 0.0025
-        backlog_ratio: 0
+        backlog_ratio: 0.1
+        excess_ratio: 0.5
       # Necessary feature for skus include:
-      # demand, selling_price, procurement_cost, init_stock, vlt, order_cost, 
-      # volume, storage_cost and basic_holding_cost
+      # demand, selling_price, procurement_cost, init_stock, vlt, unit_order_cost, 
+      # volume, storage_cost, basic_holding_cost, backlog_ratio and excess_ratio 
   - name: store2
     initial_balance: 0 
-    capacity: 5000 
-    unit_storage_cost: 0.0001
+    capacity: 10000 
+    unit_storage_cost: 0.01
     accept_sku: equal_accept
     upstream: store1
     downstream: consumer
@@ -69,22 +70,20 @@ facility:
           file: ReplenishmentEnv/data/sku2778/sku2778.demand.csv
       static_data: ReplenishmentEnv/data/sku2778/sku2778.store2.info.csv
       shared_data:
-        order_cost: 10
+        unit_order_cost: 10
         volume: 1
         storage_cost: 0.0025
         basic_holding_cost: 0.00002
-        backlog_ratio: 0
+        backlog_ratio: 0.1
+        excess_ratio: 0.5
 
 # * profit setting. profit is internal in env.
-# Currently, reward1 and reward2 are supported. backlog_ratio and excess_ratio are needed/
-profit:
-  profit_function: reward2
-  excess_ratio: 0.5
+# Currently, reward1 and reward2 are supported.
+profit_function: reward2
 
-# * reward setting. reward will be passes to agents.
-# If reward has the same formart with profit, just use "same_as_profit", or 
-reward:
-  mode: same_as_profit
+# * reward setting. profit is internal in env.
+# Currently, reward1 and reward2 are supported.
+reward_function: reward2
 
 # * action setting. Currently, 4 mode for action are supported:
 # continuous:             replenishment_quantity = action
@@ -107,6 +106,12 @@ action:
 output_state:
   current_state:
     [selling_price, procurement_cost, vlt, volume, 
-    order_cost, replenish, excess, in_stock, in_transit]
+    unit_order_cost, replenish, excess, in_stock, in_transit]
   lookback_state:
     [demand]
+
+visualization:
+  output_dir: output  # visualization output dir
+  state:              # visualization state items
+    [demand, sale, arrived, replenish,
+    excess, accepted, in_stock, in_transit,]

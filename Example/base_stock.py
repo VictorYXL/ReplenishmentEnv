@@ -91,8 +91,8 @@ def get_stock_level(env: gym.Wrapper):
             stock_levels[facility_index, sku_index] = stock_level
     return stock_levels
 
-def dynamic_base_stock(env: gym.Wrapper, update_freq=7):
-    env.reset()
+def base_stock(env: gym.Wrapper, exp_name="base_stock", update_freq=7):
+    env.reset(exp_name)
     current_step = 0
     is_done = False
     while not is_done:
@@ -107,6 +107,12 @@ def dynamic_base_stock(env: gym.Wrapper, update_freq=7):
 
 if __name__ == "__main__":
     env_name = "sku50.MultiStore.Standard"
+    env = make_env(env_name, "StaticWrapper", "test")
+    balance = base_stock(env, "statis_base_stock")
+    env.render()
+    print(balance)  # 621644.0375 722528.5875 620932.4
+
     env = make_env(env_name, "DynamicWrapper", "test")
-    balance = dynamic_base_stock(env)
-    print(balance)
+    balance = base_stock(env, "dynamic_base_stock")
+    env.render()
+    print(balance)  # 407625.9   615871.325 556933.425

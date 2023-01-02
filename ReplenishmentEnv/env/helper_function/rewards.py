@@ -14,7 +14,7 @@ def reward1(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
     procurement_cost   = agent_states["all_facilities", "procurement_cost"]
     sale               = agent_states["all_facilities", "sale"]
     replenish          = agent_states["all_facilities", "replenish"]
-    order_cost         = agent_states["all_facilities", "order_cost"]
+    unit_order_cost    = agent_states["all_facilities", "unit_order_cost"]
     in_stocks          = agent_states["all_facilities", "in_stock"]
     volume             = agent_states["all_facilities", "volume"]
     basic_holding_cost = agent_states["all_facilities", "basic_holding_cost"]
@@ -25,20 +25,21 @@ def reward1(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
     # TODO: discuss whether to add (1 - excess_ratio) * excess as compensation
     income       = selling_price * sale
     outcome      = procurement_cost * replenish
-    order_cost   = order_cost * np.where(replenish > 0, 1, 0)
+    order_cost   = unit_order_cost * np.where(replenish > 0, 1, 0)
     holding_cost = (basic_holding_cost + unit_storage_cost * volume) * in_stocks
-    backlog      = (selling_price - procurement_cost) * (demand - sale) * backlog_ratio
+    backlog_cost = (selling_price - procurement_cost) * (demand - sale) * backlog_ratio
 
-    reward       = income - outcome - order_cost - holding_cost - backlog
+    reward       = income - outcome - order_cost - holding_cost - backlog_cost
     reward_info = {
+        "reward":       reward,
         "income":       income,
         "outcome":      outcome,
         "order_cost":   order_cost,
         "holding_cost": holding_cost,
-        "backlog":      backlog,
+        "backlog_cost": backlog_cost,
     }
 
-    return reward, reward_info
+    return reward_info
 
 """
     reward2: calculate the cost when sale.
@@ -52,32 +53,33 @@ def reward2(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
     procurement_cost   = agent_states["all_facilities", "procurement_cost"]
     sale               = agent_states["all_facilities", "sale"]
     excess             = agent_states["all_facilities", "excess"]
+    excess_ratio       = agent_states["all_facilities", "excess_ratio"]
     replenish          = agent_states["all_facilities", "replenish"]
-    order_cost         = agent_states["all_facilities", "order_cost"]
+    unit_order_cost    = agent_states["all_facilities", "unit_order_cost"]
     in_stocks          = agent_states["all_facilities", "in_stock"]
     demand             = agent_states["all_facilities", "demand"]
     volume             = agent_states["all_facilities", "volume"]
     basic_holding_cost = agent_states["all_facilities", "basic_holding_cost"]
     backlog_ratio      = agent_states["all_facilities", "backlog_ratio"]
     unit_storage_cost  = np.tile(np.array(profit_info.get("unit_storage_cost", 0.01)).reshape(-1,1), [1, volume.shape[-1]])
-    excess_ratio       = profit_info.get("excess_ratio", 1)
 
     profit       = sale * (selling_price - procurement_cost)
-    excess       = procurement_cost * excess * excess_ratio
-    order_cost   = order_cost * np.where(replenish > 0, 1, 0)
+    excess_cost  = procurement_cost * excess * excess_ratio
+    order_cost   = unit_order_cost * np.where(replenish > 0, 1, 0)
     holding_cost = (basic_holding_cost + unit_storage_cost * volume) * in_stocks
-    backlog      = (selling_price - procurement_cost) * (demand - sale) * backlog_ratio
-    backlog      = np.where(backlog > 0, backlog, 0)
+    backlog_cost = (selling_price - procurement_cost) * (demand - sale) * backlog_ratio
+    backlog_cost = np.where(backlog_cost > 0, backlog_cost, 0)
 
 
 
-    reward      = profit - excess - order_cost - holding_cost - backlog
+    reward      = profit - excess_cost - order_cost - holding_cost - backlog_cost
     reward_info = {
+        "reward":       reward,
         "profit":       profit,
-        "excess":       excess,
+        "excess_cost":  excess_cost,
         "order_cost":   order_cost,
         "holding_cost": holding_cost,
-        "backlog":      backlog,
+        "backlog_cost": backlog_cost,
     }
 
-    return reward, reward_info
+    return reward_info
