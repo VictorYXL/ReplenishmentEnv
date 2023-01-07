@@ -200,6 +200,9 @@ class ReplenishmentEnv(Env):
     
     def init_env(self) -> None:
         # Get basic env info from config
+        self.sku_count              = len(self.sku_list)
+        self.facility_count         = self.supply_chain.get_facility_count()
+        self.agent_count            = self.sku_count * self.facility_count
         self.integerization_sku     = self.config["env"].get("integerization_sku", False)
         self.lookback_len           = self.config["env"].get("lookback_len", 7)
         self.current_output_state   = self.config["output_state"].get("current_state", [])
@@ -223,7 +226,7 @@ class ReplenishmentEnv(Env):
 
         self.action_space = spaces.Box(
             low=0, high=np.inf, 
-            shape=(len(self.sku_list), ), dtype=np.float32
+            shape=(self.agent_count, ), dtype=np.float32
         )
         # Current all agent_states will be returned as obs.
         output_length = len(self.current_output_state) + len(self.lookback_output_state) * self.lookback_len
@@ -279,7 +282,7 @@ class ReplenishmentEnv(Env):
 
     """
         Step orders: Replenish -> Sell -> Receive arrived skus -> Update balance
-        actions: C * N matrix, C facility count, N agent count
+        actions: C * N list, C facility count, N agent count
         contains action_idx or action_quantity, defined by action_setting in config
     """
     def step(self, actions: np.array) -> Tuple[np.array, np.array, list, dict]:
@@ -346,7 +349,8 @@ class ReplenishmentEnv(Env):
         actions: [action_idx/action_quantity] by sku order, defined by action setting in config
     """
     def replenish(self, actions) -> None:
-        replenish_amount = eval(self.action_mode)(actions, self.config["action"], self.agent_states)
+        action_matrix = np.array(actions).reshape(self.facility_count, self.sku_count)
+        replenish_amount = eval(self.action_mode)(action_matrix, self.config["action"], self.agent_states)
 
         if self.integerization_sku:
             replenish_amount = np.floor(replenish_amount)

@@ -19,7 +19,7 @@ def Ss_policy(env, S, s, exp_name=None):
         mean_demand = env.get_demand_mean()
         action = (env.get_in_stock() + env.get_in_transit()) / (mean_demand + 0.0001)
         action = np.where(action < s, S - action, 0)
-        state, reward, done, info = env.step(action)
+        state, reward, done, info = env.step(action.flatten())
         rewards += reward
     return info["balance"]
 
