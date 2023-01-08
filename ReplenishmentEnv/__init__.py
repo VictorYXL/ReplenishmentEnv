@@ -2,6 +2,7 @@ from .env.bussiness_engineering import ReplenishmentEnv
 from .wrapper.default_wrapper import DefaultWrapper
 from .wrapper.dynamic_wrapper import DynamicWrapper
 from .wrapper.static_wrapper import StaticWrapper
+from .wrapper.observation_wrapper import ObservationWrapper
 import os
 
 all = ["make_env"]
