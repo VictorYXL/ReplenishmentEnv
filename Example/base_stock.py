@@ -100,7 +100,7 @@ def base_stock(env: gym.Wrapper, exp_name="base_stock", update_freq=7):
             stock_levels = get_stock_level(env)
         replenish = stock_levels - env.get_in_stock() - env.get_in_transit()
         replenish = np.where(replenish >= 0, replenish, 0) / (env.get_demand_mean() + 0.00001)
-        states, reward, is_done, info = env.step(replenish)
+        states, reward, is_done, info = env.step(replenish.flatten())
         current_step += 1
     return info["balance"]
 
