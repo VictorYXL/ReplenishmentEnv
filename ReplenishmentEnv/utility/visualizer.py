@@ -4,7 +4,7 @@ import pandas as pd
 import pyecharts.options as opts
 from pyecharts.charts import Line, Timeline, Grid
 from datetime import datetime, timedelta
-from ReplenishmentEnv.env.agent_states import AgentStates
+from ..env.agent_states import AgentStates
 
 """
 use pyecharts to show each sku's policy and overall visualization.
