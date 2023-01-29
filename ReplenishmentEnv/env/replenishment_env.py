@@ -280,7 +280,7 @@ class ReplenishmentEnv(Env):
 
     """
         Step orders: Replenish -> Sell -> Receive arrived skus -> Update balance
-        actions: C * N matrix, C facility count, N agent count
+        actions: C * N list, C facility count, N agent count
         contains action_idx or action_quantity, defined by action_setting in config
     """
     def step(self, actions: np.array) -> Tuple[np.array, np.array, list, dict]:
@@ -348,7 +348,8 @@ class ReplenishmentEnv(Env):
         actions: [action_idx/action_quantity] by sku order, defined by action setting in config
     """
     def replenish(self, actions) -> None:
-        replenish_amount = eval(self.action_mode)(actions, self.config["action"], self.agent_states)
+        action_matrix = np.array(actions).reshape(self.facility_count, self.sku_count)
+        replenish_amount = eval(self.action_mode)(action_matrix, self.config["action"], self.agent_states)
 
         if self.integerization_sku:
             replenish_amount = np.floor(replenish_amount)
