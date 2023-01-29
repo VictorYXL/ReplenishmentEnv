@@ -21,4 +21,5 @@ class FlattenWrapper(gym.Wrapper):
         states, rewards, done, infos = self.env.step(actions)
         states = states.reshape((self.agent_count, -1))
         rewards = rewards.flatten()
+        infos['profit'] = infos['profit'].flatten()
         return states, rewards, done, infos
