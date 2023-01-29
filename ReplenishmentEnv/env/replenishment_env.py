@@ -21,7 +21,7 @@ from ..utility.data_loader import DataLoader
 
 
 class ReplenishmentEnv(Env):
-    def __init__(self, config_path, mode="train"):
+    def __init__(self, config_path, mode="train", vis_path=None, update_config=None):
         # Config loaded from yaml file
         self.config: dict = None
 
@@ -58,15 +58,22 @@ class ReplenishmentEnv(Env):
 
         # Env mode including train, validation and test. Each mode has its own dataset.
         self.mode = mode
+
+        # visualization path
+        self.vis_path = vis_path
  
-        self.load_config(config_path)
+        self.load_config(config_path, update_config)
         self.build_supply_chain()
+
         self.load_data()
         self.init_env()
 
-    def load_config(self, config_path: str) -> None:
+    def load_config(self, config_path: str, update_config: dict) -> None:
         with open(config_path, "r") as f:
             self.config = yaml.safe_load(f)
+    
+        if update_config is not None:
+            self.config = deep_update(self.config, update_config)
 
         assert("env" in self.config)
         assert("mode" in self.config["env"])
@@ -187,13 +194,11 @@ class ReplenishmentEnv(Env):
         All items except sku data can be updated.
         To avoid the obfuscation, update_config is only needed when reset with update
     """
-    def reset(self, vis_path = None, update_config:dict = None) -> None:
-        if update_config is not None:
-            self.config = deep_update(self.config, update_config)
+    def reset(self) -> None:
         self.init_env()
         self.init_data()
         self.init_state()
-        self.init_monitor(vis_path)
+        self.init_monitor()
         eval(format(self.warmup_function))(self)
         states = self.get_state()
         return states  
@@ -260,7 +265,7 @@ class ReplenishmentEnv(Env):
         )
 
     def init_monitor(self, vis_path = None) -> None:
-        if vis_path is None:
+        if self.vis_path is None:
             time_str = datetime.now().strftime('%Y%m%d_%H%M%S')
             vis_path = os.path.join("output", time_str)
         state_items = self.config["visualization"].get("state", ["replenish", "demand"])
@@ -280,7 +285,7 @@ class ReplenishmentEnv(Env):
 
     """
         Step orders: Replenish -> Sell -> Receive arrived skus -> Update balance
-        actions: C * N list, C facility count, N agent count
+        actions: C * N matrix, C facility count, N agent count
         contains action_idx or action_quantity, defined by action_setting in config
     """
     def step(self, actions: np.array) -> Tuple[np.array, np.array, list, dict]:
@@ -348,8 +353,7 @@ class ReplenishmentEnv(Env):
         actions: [action_idx/action_quantity] by sku order, defined by action setting in config
     """
     def replenish(self, actions) -> None:
-        action_matrix = np.array(actions).reshape(self.facility_count, self.sku_count)
-        replenish_amount = eval(self.action_mode)(action_matrix, self.config["action"], self.agent_states)
+        replenish_amount = eval(self.action_mode)(actions, self.config["action"], self.agent_states)
 
         if self.integerization_sku:
             replenish_amount = np.floor(replenish_amount)

@@ -11,8 +11,8 @@ class FlattenWrapper(gym.Wrapper):
         self.facility_count = self.supply_chain.get_facility_count()
         self.agent_count = self.sku_count * self.facility_count
     
-    def reset(self, vis_path:str=None, update_config: dict=None) -> None:
-        states = self.env.reset(vis_path, update_config)
+    def reset(self) -> None:
+        states = self.env.reset()
         states = states.reshape((self.agent_count, -1))
         return states
 

@@ -107,12 +107,17 @@ def base_stock(env: gym.Wrapper, exp_name="base_stock", update_freq=7):
 
 if __name__ == "__main__":
     env_name = "sku50.MultiStore.Standard"
-    env = make_env(env_name, wrapper_names=["StaticWrapper"], mode="test")
+
+    exp_name = "static_base_stock"
+    vis_path = os.path.join("output", exp_name)
+    env = make_env(env_name, wrapper_names=["StaticWrapper"], mode="test", vis_path=vis_path)
     balance = base_stock(env, "static_base_stock")
     env.render()
     print(balance)  # 621644.0375 722528.5875 620932.4
 
-    env = make_env(env_name, wrapper_names=["DynamicWrapper"], mode="test")
+    exp_name = "static_base_stock"
+    vis_path = os.path.join("output", exp_name)
+    env = make_env(env_name, wrapper_names=["DynamicWrapper"], mode="test", vis_path=vis_path)
     balance = base_stock(env, "dynamic_base_stock")
     env.render()
     print(balance)  # 407625.9   615871.325 556933.425

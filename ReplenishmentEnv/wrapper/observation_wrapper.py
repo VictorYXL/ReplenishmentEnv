@@ -203,7 +203,7 @@ class ObservationWrapper(gym.Wrapper):
         All items except sku data can be updated.
         To avoid the obfuscation, update_config is only needed when reset with update
     """
-    def reset(self, vis_path:str=None, update_config: dict=None) -> None:
+    def reset(self) -> None:
         self.max_in_stock_sum = 0
         self.env.reset(vis_path=vis_path, update_config=update_config)
         self.env.pre_step()
