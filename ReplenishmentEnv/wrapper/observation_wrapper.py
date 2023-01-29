@@ -205,7 +205,7 @@ class ObservationWrapper(gym.Wrapper):
     """
     def reset(self) -> None:
         self.max_in_stock_sum = 0
-        self.env.reset(vis_path=vis_path, update_config=update_config)
+        self.env.reset()
         self.env.pre_step()
         states = self.get_state_v1()
         self.env.next_step()
