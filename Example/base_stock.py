@@ -92,7 +92,7 @@ def get_stock_level(env: gym.Wrapper):
     return stock_levels
 
 def base_stock(env: gym.Wrapper, exp_name="base_stock", update_freq=7):
-    env.reset(exp_name)
+    env.reset(os.path.join("output", exp_name))
     current_step = 0
     is_done = False
     while not is_done:
@@ -100,19 +100,19 @@ def base_stock(env: gym.Wrapper, exp_name="base_stock", update_freq=7):
             stock_levels = get_stock_level(env)
         replenish = stock_levels - env.get_in_stock() - env.get_in_transit()
         replenish = np.where(replenish >= 0, replenish, 0) / (env.get_demand_mean() + 0.00001)
-        states, reward, is_done, info = env.step(replenish.flatten())
+        states, reward, is_done, info = env.step(replenish)
         current_step += 1
     return info["balance"]
 
 
 if __name__ == "__main__":
     env_name = "sku50.MultiStore.Standard"
-    env = make_env(env_name, "StaticWrapper", "test")
-    balance = base_stock(env, "statis_base_stock")
+    env = make_env(env_name, wrapper_names=["StaticWrapper"], mode="test")
+    balance = base_stock(env, "static_base_stock")
     env.render()
     print(balance)  # 621644.0375 722528.5875 620932.4
 
-    env = make_env(env_name, "DynamicWrapper", "test")
+    env = make_env(env_name, wrapper_names=["DynamicWrapper"], mode="test")
     balance = base_stock(env, "dynamic_base_stock")
     env.render()
     print(balance)  # 407625.9   615871.325 556933.425

@@ -1,24 +1,20 @@
-from ReplenishmentEnv.env.replenishment_env import ReplenishmentEnv
-from ReplenishmentEnv.wrapper.default_wrapper import DefaultWrapper
-from ReplenishmentEnv.wrapper.dynamic_wrapper import DynamicWrapper
-from ReplenishmentEnv.wrapper.static_wrapper import StaticWrapper
-from ReplenishmentEnv.wrapper.observation_wrapper import ObservationWrapper
+from .env.replenishment_env import ReplenishmentEnv
+from .wrapper.default_wrapper import DefaultWrapper
+from .wrapper.dynamic_wrapper import DynamicWrapper
+from .wrapper.static_wrapper import StaticWrapper
+from .wrapper.observation_wrapper import ObservationWrapper
+from .wrapper.observation_wrapper_for_old_code import ObservationWrapper4OldCode
+from .wrapper.flatten_wrapper import FlattenWrapper
 import os
 
 all = ["make_env"]
-def make_env(config_name, wrapper_name="DefaultWrapper", mode="train"):
+
+
+def make_env(config_name, wrapper_names=["DefaultWrapper"], mode="train"):
     config_dir = os.path.join(os.path.split(os.path.realpath(__file__))[0], "config")
     config_file = os.path.join(config_dir, config_name + ".yml")
     env = ReplenishmentEnv(config_file, mode)
 
-    if wrapper_name == "DefaultWrapper":
-        env = DefaultWrapper(env)
-    elif wrapper_name == "DynamicWrapper":
-        env = DynamicWrapper(DefaultWrapper(env))
-    elif wrapper_name == "StaticWrapper":
-        env = StaticWrapper(DefaultWrapper(env))
-    elif wrapper_name == "ObservationWrapper":
-        env = ObservationWrapper(DefaultWrapper(env))
-    else:
-        raise NotImplementedError
+    for wrapper_name in wrapper_names:
+        env = eval(wrapper_name)(env)
     return env

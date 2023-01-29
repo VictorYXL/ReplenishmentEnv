@@ -111,7 +111,8 @@ output_state:
     [demand]
 
 visualization:
-  output_dir: output  # visualization output dir
-  state:              # visualization state items
+  output_path: output   # visualization output dir
+  time_flag: True
+  state:                # visualization state items
     [demand, sale, arrived, replenish,
     excess, accepted, in_stock, in_transit,]

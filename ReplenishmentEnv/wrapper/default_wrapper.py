@@ -17,8 +17,8 @@ class DefaultWrapper(gym.Wrapper):
         All items except sku data can be updated.
         To avoid the obfuscation, update_config is only needed when reset with update
     """
-    def reset(self, exp_name = None, update_config:dict = None) -> None:
-        self.env.reset(exp_name, update_config)
+    def reset(self, vis_path = None, update_config:dict = None) -> None:
+        return self.env.reset(vis_path, update_config)
    
     # get demean mean by last lookback_len days.
     def get_demand_mean(self, facility="all_facilities", sku="all_skus") -> np.array:

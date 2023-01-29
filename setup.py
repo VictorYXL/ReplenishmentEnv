@@ -8,7 +8,9 @@ setup(
         "gym>=0.26.0",
         "pyaml",
         "pandas",
-        "numpy>=1.20.3"
+        "numpy>=1.20.3",
+        "cvxpy",
+        "cvxopt"
     ],
     packages=find_packages(exclude=["Example"]),
     include_package_data=True,

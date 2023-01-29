@@ -4,7 +4,7 @@ import pandas as pd
 import pyecharts.options as opts
 from pyecharts.charts import Line, Timeline, Grid
 from datetime import datetime, timedelta
-from ReplenishmentEnv.env.agent_states import AgentStates
+from ..env.agent_states import AgentStates
 
 """
 use pyecharts to show each sku's policy and overall visualization.
@@ -18,7 +18,7 @@ class Visualizer:
         sku_list: list, 
         facility_list: list, 
         state_items: list,
-        output_dir:str,
+        vis_path:str,
         warmup_length=0
     ):
         self.agent_states       = agent_states
@@ -27,7 +27,7 @@ class Visualizer:
         self.facility_list      = facility_list
         self.start_date         = start_date
         self.state_items        = state_items
-        self.output_dir         = output_dir
+        self.vis_path           = vis_path
         self.warmup_length      = warmup_length
         self.colors             = ["blue", "orange", "green", "aqua", "yellow", "red", "black"]
         self.facility_to_id     = self.agent_states.facility_to_id
@@ -113,10 +113,10 @@ class Visualizer:
             
         tl.add(grid, "{}".format(self.start_date.strftime("%Y-%m-%d")))
         output_name = "{}_{}.html".format(facility, sku)
-        tl.render(os.path.join(self.output_dir, output_name))
+        tl.render(os.path.join(self.vis_path, output_name))
 
     def render(self):
-        os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(self.vis_path, exist_ok=True)
         for facility in self.facility_list:
             for sku in self.sku_list:
                 self.render_single(facility, sku)

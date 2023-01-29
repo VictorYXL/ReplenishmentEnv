@@ -9,15 +9,15 @@ import random
 import yaml
 
 
-from ReplenishmentEnv.env.helper_function.rewards import reward1, reward2
-from ReplenishmentEnv.env.helper_function.warmup import replenish_by_last_demand
-from ReplenishmentEnv.env.helper_function.convertors import continuous, discrete, demand_mean_continuous, demand_mean_discrete
-from ReplenishmentEnv.env.helper_function.accept import equal_accept
-from ReplenishmentEnv.env.supply_chain import SupplyChain
-from ReplenishmentEnv.env.agent_states import AgentStates
-from ReplenishmentEnv.utility.utility import deep_update
-from ReplenishmentEnv.utility.visualizer import Visualizer
-from ReplenishmentEnv.utility.data_loader import DataLoader
+from .helper_function.rewards import reward1, reward2
+from .helper_function.warmup import replenish_by_last_demand
+from .helper_function.convertors import continuous, discrete, demand_mean_continuous, demand_mean_discrete
+from .helper_function.accept import equal_accept
+from .supply_chain import SupplyChain
+from .agent_states import AgentStates
+from ..utility.utility import deep_update
+from ..utility.visualizer import Visualizer
+from ..utility.data_loader import DataLoader
 
 
 class ReplenishmentEnv(Env):
@@ -187,13 +187,13 @@ class ReplenishmentEnv(Env):
         All items except sku data can be updated.
         To avoid the obfuscation, update_config is only needed when reset with update
     """
-    def reset(self, exp_name = None, update_config:dict = None) -> None:
+    def reset(self, vis_path = None, update_config:dict = None) -> None:
         if update_config is not None:
             self.config = deep_update(self.config, update_config)
         self.init_env()
         self.init_data()
         self.init_state()
-        self.init_monitor(exp_name)
+        self.init_monitor(vis_path)
         eval(format(self.warmup_function))(self)
         states = self.get_state()
         return states  
@@ -210,6 +210,7 @@ class ReplenishmentEnv(Env):
         self.action_mode            = self.config["action"].get("mode", "continuous")
         self.warmup_function        = self.config["env"].get("warmup", "replenish_by_last_demand")
         self.balance                = [self.supply_chain[facility, "init_balance"] for facility in self.facility_list]
+        self.per_balance            = np.zeros(self.agent_count)
 
         # Get mode related info from mode config
         mode_configs = [mode_config for mode_config in self.config["env"]["mode"] if mode_config["name"] == self.mode]
@@ -258,13 +259,10 @@ class ReplenishmentEnv(Env):
             self.lookback_len,
         )
 
-    def init_monitor(self, exp_name=None) -> None:
-        output_dir = self.config["visualization"].get("output_dir", "output")
-        time = datetime.now().strftime('%Y%m%d_%H%M%S')
-        if exp_name != None:
-            output_dir = os.path.join(output_dir, exp_name, time)
-        else:
-            output_dir = os.path.join(output_dir, time)
+    def init_monitor(self, vis_path = None) -> None:
+        if vis_path is None:
+            time_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+            vis_path = os.path.join("output", time_str)
         state_items = self.config["visualization"].get("state", ["replenish", "demand"])
         self.reward_info_list = []
         self.visualizer = Visualizer(
@@ -274,7 +272,7 @@ class ReplenishmentEnv(Env):
             self.sku_list, 
             self.facility_list,
             state_items,
-            output_dir,
+            vis_path,
             self.lookback_len
         )
         
@@ -282,18 +280,19 @@ class ReplenishmentEnv(Env):
 
     """
         Step orders: Replenish -> Sell -> Receive arrived skus -> Update balance
-        actions: C * N list, C facility count, N agent count
+        actions: C * N matrix, C facility count, N agent count
         contains action_idx or action_quantity, defined by action_setting in config
     """
     def step(self, actions: np.array) -> Tuple[np.array, np.array, list, dict]:
         self.replenish(actions)
         self.sell()
         self.receive_sku()
-        self.profit, _ = self.get_reward(self.config["profit_function"])
+        self.profit, _ = self.get_reward()
         self.balance += np.sum(self.profit, axis=1)
+        self.per_balance += self.profit.flatten()
 
         states = self.get_state()
-        rewards, reward_info = self.get_reward(self.config["reward_function"])
+        rewards, reward_info = self.get_reward()
         self.reward_info_list.append(reward_info)
         infos = self.get_info()
         infos["reward_info"] = reward_info
@@ -349,8 +348,7 @@ class ReplenishmentEnv(Env):
         actions: [action_idx/action_quantity] by sku order, defined by action setting in config
     """
     def replenish(self, actions) -> None:
-        action_matrix = np.array(actions).reshape(self.facility_count, self.sku_count)
-        replenish_amount = eval(self.action_mode)(action_matrix, self.config["action"], self.agent_states)
+        replenish_amount = eval(self.action_mode)(actions, self.config["action"], self.agent_states)
 
         if self.integerization_sku:
             replenish_amount = np.floor(replenish_amount)
@@ -376,7 +374,7 @@ class ReplenishmentEnv(Env):
                 if self.agent_states.current_step < self.durations - 1:
                     self.agent_states[upstream, "demand"] = facility_replenish_amount
 
-    def get_reward(self, function) -> Tuple[np.array, dict]:
+    def get_reward(self) -> Tuple[np.array, dict]:
         reward_info = {
             "unit_storage_cost": [self.supply_chain[facility, "unit_storage_cost"] for facility in self.facility_list]
         }
@@ -384,10 +382,9 @@ class ReplenishmentEnv(Env):
         rewards = reward_info["reward"]
         return rewards, reward_info
 
-    # Output M * N matrix: M is state count and N is agent count
+    # Output C * N * M matrix:  C is facility count, N is sku count and M is state count
     def get_state(self) -> dict:
-        # states = self.agent_states.snapshot(self.current_output_state, self.lookback_output_state)
-        states = []
+        states = self.agent_states.snapshot(self.current_output_state, self.lookback_output_state)
         return states
 
     def get_info(self) -> dict:
@@ -405,5 +402,5 @@ class ReplenishmentEnv(Env):
         self.current_step += 1
         self.agent_states.next_step()
 
-    def render(self, mode: str="human", close: bool=False) -> None:
+    def render(self) -> None:
         self.visualizer.render()

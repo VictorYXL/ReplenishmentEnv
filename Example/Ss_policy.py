@@ -10,7 +10,7 @@ sys.path.insert(0, env_dir)
 from ReplenishmentEnv import make_env
 
 def Ss_policy(env, S, s, exp_name=None):
-    env.reset(exp_name)
+    env.reset(os.path.join("output", exp_name))
     done = False
     sku_count = len(env.get_sku_list())
     facility_count = len(env.facility_list)
@@ -19,13 +19,13 @@ def Ss_policy(env, S, s, exp_name=None):
         mean_demand = env.get_demand_mean()
         action = (env.get_in_stock() + env.get_in_transit()) / (mean_demand + 0.0001)
         action = np.where(action < s, S - action, 0)
-        state, reward, done, info = env.step(action.flatten())
+        state, reward, done, info = env.step(action)
         rewards += reward
     return info["balance"]
 
 if __name__ == "__main__":
     env_name = "sku50.MultiStore.Standard"
-    env = make_env(env_name, "DefaultWrapper", "test")
+    env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test")
 
     exp_name = "Ss_policy_S1.0_s1.0"
     balance = Ss_policy(env, [[1.0] * 50] * 3, [[1.0] * 50] * 3, exp_name)
