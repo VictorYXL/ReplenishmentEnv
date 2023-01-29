@@ -54,7 +54,6 @@ output_state:
     [demand]
 
 visualization:
-  output_dir: output
   state: 
     [demand, sale, arrived, replenish,
     excess, accepted, in_stock, in_transit,]

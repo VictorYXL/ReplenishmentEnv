@@ -6,6 +6,7 @@ import numpy as np
 """
 def replenish_by_last_demand(env) -> None:
     _init_balance = env.balance
+    _init_per_balance = env.per_balance
     _action_mode = env.action_mode
 
     env.action_mode = "continuous"
@@ -16,3 +17,4 @@ def replenish_by_last_demand(env) -> None:
 
     env.action_mode = _action_mode
     env.balance = _init_balance
+    env.per_balance = _init_per_balance

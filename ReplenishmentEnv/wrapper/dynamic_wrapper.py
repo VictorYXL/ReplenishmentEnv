@@ -21,8 +21,8 @@ class DynamicWrapper(DefaultWrapper):
         All items except sku data can be updated.
         To avoid the obfuscation, update_config is only needed when reset with update.
     """
-    def reset(self, exp_name = None, update_config:dict = None) -> None:
-        self.env.reset(exp_name, update_config)
+    def reset(self, vis_path = None, update_config:dict = None) -> None:
+        self.env.reset(vis_path, update_config)
     
     def get_selling_price(self, facility="all_facilities", sku="all_skus") -> np.array:
         return self.env.agent_states[facility, "selling_price", "lookback", sku].copy()

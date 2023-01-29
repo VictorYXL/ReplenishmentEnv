@@ -277,13 +277,16 @@ class AgentStates(object):
         value = np.concatenate([first_value, rest_value])
         return value
     
-    # Output M * N matrix: M is state count and N is sku count
-    # TODO: Update to multi-facility_list
+    # # Output C * N * M matrix:  C is facility count, N is sku count and M is state count
     def snapshot(self, current_state_items, lookback_state_items):
-        states_list = [self.__getitem__(item).reshape(1, self.skus_count).copy() for item in current_state_items]
-        for item in lookback_state_items:
-            state = self.__getitem__([item, "lookback_with_current"]).copy()
-            states_list.append(state)
-        states = np.concatenate(states_list)
+        states_list = []
+        for facility in self.facility_list:
+            single_facility_states_list = [self.__getitem__([facility, item]).reshape(1, self.skus_count, 1).copy() for item in current_state_items]
+            for item in lookback_state_items:
+                state = self.__getitem__([facility, item, "lookback_with_current"]).copy()
+                single_facility_states_list.append(state.reshape(1, self.skus_count, -1))
+            single_facility_states = np.concatenate(single_facility_states_list, axis=-1)
+            states_list.append(single_facility_states)
+        states = np.concatenate(states_list, axis=0)
         return states
         

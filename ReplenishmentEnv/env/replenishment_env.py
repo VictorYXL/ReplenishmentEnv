@@ -187,13 +187,13 @@ class ReplenishmentEnv(Env):
         All items except sku data can be updated.
         To avoid the obfuscation, update_config is only needed when reset with update
     """
-    def reset(self, exp_name = None, update_config:dict = None) -> None:
+    def reset(self, vis_path = None, update_config:dict = None) -> None:
         if update_config is not None:
             self.config = deep_update(self.config, update_config)
         self.init_env()
         self.init_data()
         self.init_state()
-        self.init_monitor(exp_name)
+        self.init_monitor(vis_path)
         eval(format(self.warmup_function))(self)
         states = self.get_state()
         return states  
@@ -210,6 +210,7 @@ class ReplenishmentEnv(Env):
         self.action_mode            = self.config["action"].get("mode", "continuous")
         self.warmup_function        = self.config["env"].get("warmup", "replenish_by_last_demand")
         self.balance                = [self.supply_chain[facility, "init_balance"] for facility in self.facility_list]
+        self.per_balance            = np.zeros(self.agent_count)
 
         # Get mode related info from mode config
         mode_configs = [mode_config for mode_config in self.config["env"]["mode"] if mode_config["name"] == self.mode]
@@ -258,13 +259,10 @@ class ReplenishmentEnv(Env):
             self.lookback_len,
         )
 
-    def init_monitor(self, exp_name=None) -> None:
-        output_dir = self.config["visualization"].get("output_dir", "output")
-        time = datetime.now().strftime('%Y%m%d_%H%M%S')
-        if exp_name != None:
-            output_dir = os.path.join(output_dir, exp_name, time)
-        else:
-            output_dir = os.path.join(output_dir, time)
+    def init_monitor(self, vis_path = None) -> None:
+        if vis_path is None:
+            time_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+            vis_path = os.path.join("output", time_str)
         state_items = self.config["visualization"].get("state", ["replenish", "demand"])
         self.reward_info_list = []
         self.visualizer = Visualizer(
@@ -274,7 +272,7 @@ class ReplenishmentEnv(Env):
             self.sku_list, 
             self.facility_list,
             state_items,
-            output_dir,
+            vis_path,
             self.lookback_len
         )
         
@@ -289,11 +287,12 @@ class ReplenishmentEnv(Env):
         self.replenish(actions)
         self.sell()
         self.receive_sku()
-        self.profit, _ = self.get_reward(self.config["profit_function"])
+        self.profit, _ = self.get_reward()
         self.balance += np.sum(self.profit, axis=1)
+        self.per_balance += self.profit.flatten()
 
         states = self.get_state()
-        rewards, reward_info = self.get_reward(self.config["reward_function"])
+        rewards, reward_info = self.get_reward()
         self.reward_info_list.append(reward_info)
         infos = self.get_info()
         infos["reward_info"] = reward_info
@@ -376,7 +375,7 @@ class ReplenishmentEnv(Env):
                 if self.agent_states.current_step < self.durations - 1:
                     self.agent_states[upstream, "demand"] = facility_replenish_amount
 
-    def get_reward(self, function) -> Tuple[np.array, dict]:
+    def get_reward(self) -> Tuple[np.array, dict]:
         reward_info = {
             "unit_storage_cost": [self.supply_chain[facility, "unit_storage_cost"] for facility in self.facility_list]
         }
@@ -384,10 +383,9 @@ class ReplenishmentEnv(Env):
         rewards = reward_info["reward"]
         return rewards, reward_info
 
-    # Output M * N matrix: M is state count and N is agent count
+    # Output C * N * M matrix:  C is facility count, N is sku count and M is state count
     def get_state(self) -> dict:
-        # states = self.agent_states.snapshot(self.current_output_state, self.lookback_output_state)
-        states = []
+        states = self.agent_states.snapshot(self.current_output_state, self.lookback_output_state)
         return states
 
     def get_info(self) -> dict:
@@ -405,5 +403,5 @@ class ReplenishmentEnv(Env):
         self.current_step += 1
         self.agent_states.next_step()
 
-    def render(self, mode: str="human", close: bool=False) -> None:
+    def render(self) -> None:
         self.visualizer.render()
