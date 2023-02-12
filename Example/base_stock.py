@@ -32,8 +32,8 @@ def get_single_stock_level(
         buy_in = cp.Variable(time_hrz_len, integer=True)
         # Expected accepted product quantity.
         buy_arv = cp.Variable(time_hrz_len, integer=True)
-        stock_level = cp.Variable(time_hrz_len, integer=True)
-        # stock_level = cp.Variable(1, integer=True)
+        # stock_level = cp.Variable(time_hrz_len, integer=True)
+        stock_level = cp.Variable(1, integer=True)
 
         profit = cp.Variable(1)
 
@@ -66,7 +66,8 @@ def get_single_stock_level(
         obj = cp.Maximize(profit)
         prob = cp.Problem(obj, constraints)
         prob.solve(solver=cp.GLPK_MI, verbose=False)
-        return np.average(stock_level.value)
+        # return stock_level.value
+        return stock_level.value
 
 def get_stock_level(env: gym.Wrapper):
     stock_levels = np.zeros((len(env.get_facility_list()), len(env.get_sku_list())))
@@ -91,8 +92,8 @@ def get_stock_level(env: gym.Wrapper):
             stock_levels[facility_index, sku_index] = stock_level
     return stock_levels
 
-def base_stock(env: gym.Wrapper, exp_name="base_stock", update_freq=7):
-    env.reset(os.path.join("output", exp_name))
+def base_stock(env: gym.Wrapper, update_freq=7):
+    env.reset()
     current_step = 0
     is_done = False
     while not is_done:
@@ -106,18 +107,18 @@ def base_stock(env: gym.Wrapper, exp_name="base_stock", update_freq=7):
 
 
 if __name__ == "__main__":
-    env_name = "sku50.MultiStore.Standard"
+    env_name = "sku50.multi_store.standard"
 
     exp_name = "static_base_stock"
-    vis_path = os.path.join("output", exp_name)
+    vis_path = os.path.join("output", env_name, exp_name)
     env = make_env(env_name, wrapper_names=["StaticWrapper"], mode="test", vis_path=vis_path)
-    balance = base_stock(env, "static_base_stock")
+    balance = base_stock(env)
     env.render()
-    print(balance)  # 621644.0375 722528.5875 620932.4
+    print(balance)
 
-    exp_name = "static_base_stock"
-    vis_path = os.path.join("output", exp_name)
+    exp_name = "dynamic_base_stock"
+    vis_path = os.path.join("output", env_name, exp_name)
     env = make_env(env_name, wrapper_names=["DynamicWrapper"], mode="test", vis_path=vis_path)
-    balance = base_stock(env, "dynamic_base_stock")
+    balance = base_stock(env)
     env.render()
-    print(balance)  # 407625.9   615871.325 556933.425
+    print(balance)

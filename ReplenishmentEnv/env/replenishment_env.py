@@ -35,7 +35,7 @@ class ReplenishmentEnv(Env):
         # Look back information length
         self.lookback_len = 0
 
-        # All facilities' sku data are shored in total_data, indlcuing 3 types of sku information.
+        # All facilities' sku data are shored in total_data, including 3 types of sku information.
         # self.total_data = [
         # {
         #       "facility_name" : name,
@@ -60,7 +60,7 @@ class ReplenishmentEnv(Env):
         self.mode = mode
 
         # visualization path
-        self.vis_path = vis_path
+        self.vis_path = os.path.join("output", datetime.now().strftime('%Y%m%d_%H%M%S')) if vis_path is None else vis_path
  
         self.load_config(config_path, update_config)
         self.build_supply_chain()
@@ -264,10 +264,7 @@ class ReplenishmentEnv(Env):
             self.lookback_len,
         )
 
-    def init_monitor(self, vis_path = None) -> None:
-        if self.vis_path is None:
-            time_str = datetime.now().strftime('%Y%m%d_%H%M%S')
-            vis_path = os.path.join("output", time_str)
+    def init_monitor(self) -> None:
         state_items = self.config["visualization"].get("state", ["replenish", "demand"])
         self.reward_info_list = []
         self.visualizer = Visualizer(
@@ -277,7 +274,7 @@ class ReplenishmentEnv(Env):
             self.sku_list, 
             self.facility_list,
             state_items,
-            vis_path,
+            self.vis_path,
             self.lookback_len
         )
         

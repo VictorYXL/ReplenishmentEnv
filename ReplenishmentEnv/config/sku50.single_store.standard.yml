@@ -16,12 +16,12 @@ env:
   lookback_len: 21
   integerization_sku: True
   warmup: replenish_by_last_demand
-  sku_list: ReplenishmentEnv/data/sku2778/sku50.smooth_demand.sku_list.csv
+  sku_list: ReplenishmentEnv/data/sku2778/sku50.sku_list.csv
 
 facility:
   - name: store3
     initial_balance: 0
-    capacity: 10000
+    capacity: 5000
     unit_storage_cost: 0.01
     accept_sku: equal_accept
     upstream: super_vendor

@@ -24,32 +24,32 @@ def Ss_policy(env, S, s):
     return info["balance"]
 
 if __name__ == "__main__":
-    env_name = "sku50.MultiStore.Standard"
+    env_name = "sku50.multi_store.standard"
 
     exp_name = "Ss_policy_S1.0_s1.0"
-    vis_path = os.path.join("output", exp_name)
+    vis_path = os.path.join("output", env_name, exp_name)
     env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
-    balance = Ss_policy(env, [[1.0] * 50] * 3, [[1.0] * 50] * 3)
+    balance = Ss_policy(env, [[2.0] * env.sku_count] * env.facility_count, [[2.0] * env.sku_count] * env.facility_count)
     env.render()
-    print(balance)  # [42427.1625, 47639.125, 28938.5375]
+    print(balance)
 
-    exp_name = "Ss_policy_S3.5_s3.5"
-    vis_path = os.path.join("output", exp_name)
+    exp_name = "Ss_policy_S3.0_s3.0"
+    vis_path = os.path.join("output", env_name, exp_name)
     env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
-    balance = Ss_policy(env, [[3.5] * 50] * 3, [[3.5] * 50] * 3)
+    balance = Ss_policy(env, [[3.0] * env.sku_count] * env.facility_count, [[3.0] * env.sku_count] * env.facility_count)
     env.render()
-    print(balance)  # [539054.1, 615175.0125, 536784.15]
+    print(balance)
 
-    exp_name = "Ss_policy_S4.0_s4.0"
-    vis_path = os.path.join("output", exp_name)
+    exp_name = "Ss_policy_Ss_S5.0_s5.0"
+    vis_path = os.path.join("output", env_name, exp_name)
     env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
-    balance = Ss_policy(env, [[4.0] * 50] * 3, [[4.0] * 50] * 3)
+    balance = Ss_policy(env, [[5.0] * env.sku_count] * env.facility_count, [[5.0] * env.sku_count] * env.facility_count)
     env.render()
-    print(balance)  # [597919.8375, 684820.125, 592711.1375]
+    print(balance)
 
-    exp_name = "Ss_policy_Ss_best"
-    vis_path = os.path.join("output", exp_name)
-    env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test")
-    balance = Ss_policy(env, [[3.5] * 50, [3.5] * 50, [4.0] * 50], [[3.0] * 50, [3.5] * 50, [4.0] * 50], vis_path=vis_path)
+    exp_name = "Ss_policy_Ss_S7.0_s7.0"
+    vis_path = os.path.join("output", env_name, exp_name)
+    env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
+    balance = Ss_policy(env, [[7.0] * env.sku_count] * env.facility_count, [[7.0] * env.sku_count] * env.facility_count)
     env.render()
-    print(balance)  # [589575.425, 666595.7, 585118.1125]
+    print(balance)
