@@ -24,32 +24,40 @@ def Ss_policy(env, S, s):
     return info["balance"]
 
 if __name__ == "__main__":
-    env_name = "sku50.multi_store.standard"
+    env_names = [
+        "sku50.multi_store.standard",
+        "sku2000.multi_store.standard",
+        "sku1000.multi_store.standard",
+        "sku500.multi_store.standard",
+        "sku100.multi_store.standard",
+        "sku200.multi_store.standard"
+    ]
+    
+    for env_name in env_names:
+        exp_name = "Ss_policy_S1.0_s1.0"
+        vis_path = os.path.join("output", env_name, exp_name)
+        env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
+        balance = Ss_policy(env, [[2.0] * env.sku_count] * env.facility_count, [[2.0] * env.sku_count] * env.facility_count)
+        env.render()
+        print(env_name, exp_name, balance)
 
-    exp_name = "Ss_policy_S1.0_s1.0"
-    vis_path = os.path.join("output", env_name, exp_name)
-    env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
-    balance = Ss_policy(env, [[2.0] * env.sku_count] * env.facility_count, [[2.0] * env.sku_count] * env.facility_count)
-    env.render()
-    print(balance)
+        exp_name = "Ss_policy_S3.0_s3.0"
+        vis_path = os.path.join("output", env_name, exp_name)
+        env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
+        balance = Ss_policy(env, [[3.0] * env.sku_count] * env.facility_count, [[3.0] * env.sku_count] * env.facility_count)
+        env.render()
+        print(env_name, exp_name, balance)
 
-    exp_name = "Ss_policy_S3.0_s3.0"
-    vis_path = os.path.join("output", env_name, exp_name)
-    env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
-    balance = Ss_policy(env, [[3.0] * env.sku_count] * env.facility_count, [[3.0] * env.sku_count] * env.facility_count)
-    env.render()
-    print(balance)
+        exp_name = "Ss_policy_Ss_S5.0_s5.0"
+        vis_path = os.path.join("output", env_name, exp_name)
+        env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
+        balance = Ss_policy(env, [[5.0] * env.sku_count] * env.facility_count, [[5.0] * env.sku_count] * env.facility_count)
+        env.render()
+        print(env_name, exp_name, balance)
 
-    exp_name = "Ss_policy_Ss_S5.0_s5.0"
-    vis_path = os.path.join("output", env_name, exp_name)
-    env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
-    balance = Ss_policy(env, [[5.0] * env.sku_count] * env.facility_count, [[5.0] * env.sku_count] * env.facility_count)
-    env.render()
-    print(balance)
-
-    exp_name = "Ss_policy_Ss_S7.0_s7.0"
-    vis_path = os.path.join("output", env_name, exp_name)
-    env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
-    balance = Ss_policy(env, [[7.0] * env.sku_count] * env.facility_count, [[7.0] * env.sku_count] * env.facility_count)
-    env.render()
-    print(balance)
+        exp_name = "Ss_policy_Ss_S7.0_s7.0"
+        vis_path = os.path.join("output", env_name, exp_name)
+        env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
+        balance = Ss_policy(env, [[7.0] * env.sku_count] * env.facility_count, [[7.0] * env.sku_count] * env.facility_count)
+        env.render()
+        print(env_name, exp_name, balance)

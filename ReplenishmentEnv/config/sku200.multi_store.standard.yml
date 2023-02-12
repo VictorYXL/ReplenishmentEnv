@@ -4,14 +4,14 @@ env:
   mode:
     - name: train
       start_date: 2018/8/1
-      end_date: 2019/5/27
+      end_date: 2021/6/30
       random_interception: True
     - name: validation
-      start_date: 2019/5/28
-      end_date: 2019/9/4 
+      start_date: 2021/7/1
+      end_date: 2021/8/31 
     - name: test
-      start_date: 2019/9/5
-      end_date: 2019/12/13
+      start_date: 2021/9/1
+      end_date: 2021/10/30
   horizon: 100
   lookback_len: 21
   integerization_sku: True
@@ -41,7 +41,7 @@ facility:
         excess_ratio: 0.5
   - name: store2
     initial_balance: 0
-    capacity: 30000
+    capacity: 40000
     unit_storage_cost: 0.01
     accept_sku: equal_accept
     upstream: store1
@@ -61,7 +61,7 @@ facility:
         excess_ratio: 0.5
   - name: store3
     initial_balance: 0
-    capacity: 20000
+    capacity: 40000
     unit_storage_cost: 0.01
     accept_sku: equal_accept
     upstream: store2
