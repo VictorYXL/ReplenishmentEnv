@@ -10,10 +10,10 @@ def replenish_by_last_demand(env) -> None:
     _action_mode = env.action_mode
 
     env.action_mode = "continuous"
-    last_demand = np.zeros((len(env.facility_list), len(env.sku_list)))
+    last_demand = np.zeros((len(env.warehouse_list), len(env.sku_list)))
     for day in range(env.lookback_len):
         env.step(last_demand)
-        last_demand = env.agent_states["all_facilities", "demand", "yesterday"]
+        last_demand = env.agent_states["all_warehouses", "demand", "yesterday"]
 
     env.action_mode = _action_mode
     env.balance = _init_balance

@@ -23,15 +23,15 @@ env:
   # sku_list file should start with SKU
   sku_list: ReplenishmentEnv/data/sku2778/sku50.sku_list.csv 
 
-# * Facility info
-facility:
-  - name: store1              # * Facility name
-    initial_balance: 0        # * Init balance for facility. 
-    capacity: 10000            # * Capacity for facility. 
+# * Warehouse info
+warehouse:
+  - name: store1              # * Warehouse name
+    initial_balance: 0        # * Init balance for warehouse. 
+    capacity: 10000           # * Capacity for warehouse. 
     unit_storage_cost: 0.01   # * Unit storage cost per volume
     accept_sku: equal_accept         # Aeecpt sku funtion when excess the capacity limitaion. Default is equal_accept.
-    upstream: super_vendor    # * Upstream for facility. Super_vendor can provide unlimited skus.
-    downstream: store2        # * Downstream for facility. Consumers represents the actual demand.
+    upstream: super_vendor    # * Upstream for warehouse. Super_vendor can provide unlimited skus.
+    downstream: store2        # * Downstream for warehouse. Consumers represents the actual demand.
     sku:
       # Dynamic info that will changed every day. 
       # Each item is interpreted by a single file with columns "Date,SKU0,SKU1,SKU2,..."

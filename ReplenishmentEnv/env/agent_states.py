@@ -2,8 +2,8 @@ import numpy as np
 
 """
 Numpy based matrix to store the state for all stores and skus.
-Use sku_states[facility_name, state_item, date, sku_id] to get the spaicel state for special sku and special day.
-    - facility_name: Necessary item for target store. All facility_name can be found in get_all_stores().
+Use sku_states[warehouse_name, state_item, date, sku_id] to get the states for special sku and special day.
+    - warehouse_name: Necessary item for target store. All warehouse_name can be found in get_all_stores().
     - state_item: Necessary item for target state. All state_item can be found in get_state_items().
     - date: set date to get state in special date.`
         - today: get state in current_step. Default is today.
@@ -15,7 +15,7 @@ Use sku_states[facility_name, state_item, date, sku_id] to get the spaicel state
         - all_dates: get state for all dataes.
     - sku_id: set sku_id to get the target sku info.
         - all_skus: get state for all skus. Default is all_skus.
-For the state which is not stated in state matrix, difinite the get_/set_/init_ function to realize it.
+For the state which is not stated in state matrix, definite the get_/set_/init_ function to realize it.
 """
 class AgentStates(object):
     def __init__(
@@ -25,7 +25,7 @@ class AgentStates(object):
             data: list=None, 
             lookback_len: int=7, 
         ) -> None:
-        self.facility_list = [facility["facility_name"] for facility in data]
+        self.warehouse_list = [warehouse["warehouse_name"] for warehouse in data]
         self.sku_ids = sku_ids
         self.skus_count = len(self.sku_ids)
         self.states_items = self.get_state_items()
@@ -41,8 +41,8 @@ class AgentStates(object):
         # Durations length.
         self.durations = durations
     
-        # Facility name to index dict.
-        self.facility_to_id = {facility_name: index for index, facility_name in enumerate(self.facility_list)}
+        # Warehouse name to index dict.
+        self.warehouse_to_id = {warehouse_name: index for index, warehouse_name in enumerate(self.warehouse_list)}
 
         # Sku name to index dict.
         self.sku_to_id = {sku_id: index for index, sku_id in enumerate(self.sku_ids)}
@@ -50,30 +50,30 @@ class AgentStates(object):
         # State to index dict.
         self.states_to_id = {state: index for index, state in enumerate(self.states_items)}
     
-        # C * M * D * N: N , C facility count, M state item count, D dates count, N sku count
+        # C * M * D * N: N , C warehouse count, M state item count, D dates count, N sku count
         self.states = np.zeros((
-            len(self.facility_list),
+            len(self.warehouse_list),
             len(self.states_items),
             self.durations + self.lookback_len,
             len(self.sku_ids)
         ))
 
         # Init the state in order as: dynamic state, static_state, shared_state and default value
-        for facility_data in data:
+        for warehouse_data in data:
             for item in self.states_items:
-                if item in facility_data["dynamic_data"]:
-                    value = facility_data["dynamic_data"][item].to_numpy()
-                elif item in facility_data["static_data"]:
-                    value = facility_data["static_data"][item].to_numpy()
-                elif item in facility_data["shared_data"]:
-                    value = facility_data["shared_data"][item]
+                if item in warehouse_data["dynamic_data"]:
+                    value = warehouse_data["dynamic_data"][item].to_numpy()
+                elif item in warehouse_data["static_data"]:
+                    value = warehouse_data["static_data"][item].to_numpy()
+                elif item in warehouse_data["shared_data"]:
+                    value = warehouse_data["shared_data"][item]
                 elif item in self.init_0_items:
                     value = 0
                 elif hasattr(self, "init_{0}".format(item)):
-                    value = eval("self.init_{0}".format(item))(facility_data)
+                    value = eval("self.init_{0}".format(item))(warehouse_data)
                 else:
                     value = np.nan
-                self.__setitem__([facility_data["facility_name"], item, "all_dates"], value)
+                self.__setitem__([warehouse_data["warehouse_name"], item, "all_dates"], value)
 
     def __len__ (self):
         return len(self.sku_ids)
@@ -123,32 +123,32 @@ class AgentStates(object):
         ]
         return states_items
 
-    # index = [facility_name, state, date, sku].
-    # Facility_name and state are needed.
+    # index = [warehouse_name, state, date, sku].
+    # Warehouse_name and state are needed.
     def __getitem__(self, index):
         assert(isinstance(index, tuple) or isinstance(index, list))
         assert(len(index) >= 2 and len(index) <= 4)
         if len(index) == 2:
-            facility_name = index[0]
+            warehouse_name = index[0]
             state_item = index[1]
             date = "today"
             sku_id = "all_skus"
         elif len(index) == 3:
-            facility_name = index[0]
+            warehouse_name = index[0]
             state_item = index[1]
             date = index[2]
             sku_id = "all_skus"
         elif len(index) == 4:
-            facility_name = index[0]
+            warehouse_name = index[0]
             state_item = index[1]
             date = index[2]
             sku_id = index[3]
 
-        if facility_name == "all_facilities":
-            facility_id = slice(None, None, None)
+        if warehouse_name == "all_warehouses":
+            warehouse_id = slice(None, None, None)
         else:
-            assert(facility_name in self.facility_to_id)
-            facility_id = self.facility_to_id[facility_name]
+            assert(warehouse_name in self.warehouse_to_id)
+            warehouse_id = self.warehouse_to_id[warehouse_name]
 
         if isinstance(date, str):
             # Due to warmup, today date index = current_step + lookback_len
@@ -184,38 +184,38 @@ class AgentStates(object):
 
         if state_item in self.states_items:
             state_index = self.states_to_id[state_item]
-            return self.states[facility_id, state_index, date, sku_index]
+            return self.states[warehouse_id, state_index, date, sku_index]
         elif hasattr(self, "get_{0}".format(state_item)):
-            return eval("self.get_{0}".format(state_item))(facility_id, date, sku_id)
+            return eval("self.get_{0}".format(state_item))(warehouse_id, date, sku_id)
         else:
             raise NotImplementedError
 
-    # index = [facility_name, state, date, sku].
-    # Facility_name and state are needed.
+    # index = [warehouse_name, state, date, sku].
+    # Warehouse_name and state are needed.
     def __setitem__(self, index, value):
         assert(isinstance(index, tuple) or isinstance(index, list))
         assert(len(index) >= 2 and len(index) <= 4)
         if len(index) == 2:
-            facility_name = index[0]
+            warehouse_name = index[0]
             state_item = index[1]
             date = "today"
             sku_id = "all_skus"
         elif len(index) == 3:
-            facility_name = index[0]
+            warehouse_name = index[0]
             state_item = index[1]
             date = index[2]
             sku_id = "all_skus"
         elif len(index) == 4:
-            facility_name = index[0]
+            warehouse_name = index[0]
             state_item = index[1]
             date = index[2]
             sku_id = index[3]
 
-        if facility_name == "all_facilities":
-            facility_id = slice(None, None, None)
+        if warehouse_name == "all_warehouses":
+            warehouse_id = slice(None, None, None)
         else:
-            assert(facility_name in self.facility_to_id)
-            facility_id = self.facility_to_id[facility_name]
+            assert(warehouse_name in self.warehouse_to_id)
+            warehouse_id = self.warehouse_to_id[warehouse_name]
         
         if isinstance(date, str):
             # Due to warmup, today date index = current_step + lookback_len
@@ -250,9 +250,9 @@ class AgentStates(object):
             
         if state_item in self.states_items:
             state_index = self.states_to_id[state_item]
-            self.states[facility_id, state_index, date, sku_index] = value
+            self.states[warehouse_id, state_index, date, sku_index] = value
         elif hasattr(self, "set_{0}".format(state_item)):
-            eval("self.set_{0}".format(state_item))(value, facility_id, date, sku_id)
+            eval("self.set_{0}".format(state_item))(value, warehouse_id, date, sku_id)
         else:
             raise NotImplementedError
 
@@ -261,7 +261,7 @@ class AgentStates(object):
         # Inherited states items
         if self.current_step < self.durations:
             for item in self.inherited_states_items:
-                self.__setitem__(["all_facilities", item], self.__getitem__(["all_facilities", item, "yesterday"]))
+                self.__setitem__(["all_warehouses", item], self.__getitem__(["all_warehouses", item, "yesterday"]))
     
     def pre_step(self):
         self.current_step -= 1
@@ -269,24 +269,24 @@ class AgentStates(object):
     """
         Init in_stock from init_stock
     """
-    def init_in_stock(self, facility_data: dict) -> np.array:
+    def init_in_stock(self, warehouse_data: dict) -> np.array:
         # First date
-        first_value = facility_data["static_data"].get("init_stock", 0).to_numpy().reshape(1, -1)
+        first_value = warehouse_data["static_data"].get("init_stock", 0).to_numpy().reshape(1, -1)
         # Rest dates
         rest_value = (np.ones((self.durations + self.lookback_len - 1, self.skus_count)) * np.nan)
         value = np.concatenate([first_value, rest_value])
         return value
     
-    # # Output C * N * M matrix:  C is facility count, N is sku count and M is state count
+    # # Output C * N * M matrix:  C is warehouse count, N is sku count and M is state count
     def snapshot(self, current_state_items, lookback_state_items):
         states_list = []
-        for facility in self.facility_list:
-            single_facility_states_list = [self.__getitem__([facility, item]).reshape(1, self.skus_count, 1).copy() for item in current_state_items]
+        for warehouse in self.warehouse_list:
+            single_warehouse_states_list = [self.__getitem__([warehouse, item]).reshape(1, self.skus_count, 1).copy() for item in current_state_items]
             for item in lookback_state_items:
-                state = self.__getitem__([facility, item, "lookback_with_current"]).copy()
-                single_facility_states_list.append(state.reshape(1, self.skus_count, -1))
-            single_facility_states = np.concatenate(single_facility_states_list, axis=-1)
-            states_list.append(single_facility_states)
+                state = self.__getitem__([warehouse, item, "lookback_with_current"]).copy()
+                single_warehouse_states_list.append(state.reshape(1, self.skus_count, -1))
+            single_warehouse_states = np.concatenate(single_warehouse_states_list, axis=-1)
+            states_list.append(single_warehouse_states)
         states = np.concatenate(states_list, axis=0)
         return states
         
