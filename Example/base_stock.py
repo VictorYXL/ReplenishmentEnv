@@ -107,18 +107,26 @@ def base_stock(env: gym.Wrapper, update_freq=7):
 
 
 if __name__ == "__main__":
-    env_name = "sku50.multi_store.standard"
+    env_names = [
+        "sku50.multi_store.standard",
+        "sku100.multi_store.standard",
+        "sku200.multi_store.standard"
+        "sku500.multi_store.standard",
+        "sku1000.multi_store.standard",
+        "sku2000.multi_store.standard",
+    ]
 
-    exp_name = "static_base_stock"
-    vis_path = os.path.join("output", env_name, exp_name)
-    env = make_env(env_name, wrapper_names=["StaticWrapper"], mode="test", vis_path=vis_path)
-    balance = base_stock(env)
-    env.render()
-    print(env_name, exp_name, balance)
+    for env_name in env_names:
+        exp_name = "static_base_stock"
+        vis_path = os.path.join("output", env_name, exp_name)
+        env = make_env(env_name, wrapper_names=["StaticWrapper"], mode="test", vis_path=vis_path)
+        balance = base_stock(env)
+        env.render()
+        print(env_name, exp_name, balance)
 
-    exp_name = "dynamic_base_stock"
-    vis_path = os.path.join("output", env_name, exp_name)
-    env = make_env(env_name, wrapper_names=["DynamicWrapper"], mode="test", vis_path=vis_path)
-    balance = base_stock(env)
-    env.render()
-    print(env_name, exp_name, balance)
+        exp_name = "dynamic_base_stock"
+        vis_path = os.path.join("output", env_name, exp_name)
+        env = make_env(env_name, wrapper_names=["DynamicWrapper"], mode="test", vis_path=vis_path)
+        balance = base_stock(env)
+        env.render()
+        print(env_name, exp_name, balance)

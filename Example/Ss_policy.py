@@ -26,11 +26,11 @@ def Ss_policy(env, S, s):
 if __name__ == "__main__":
     env_names = [
         "sku50.multi_store.standard",
-        "sku2000.multi_store.standard",
-        "sku1000.multi_store.standard",
-        "sku500.multi_store.standard",
         "sku100.multi_store.standard",
         "sku200.multi_store.standard"
+        "sku500.multi_store.standard",
+        "sku1000.multi_store.standard",
+        "sku2000.multi_store.standard",
     ]
     
     for env_name in env_names:
