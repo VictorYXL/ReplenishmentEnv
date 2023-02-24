@@ -24,45 +24,45 @@ class DynamicWrapper(DefaultWrapper):
     def reset(self) -> None:
         self.env.reset()
     
-    def get_selling_price(self, facility="all_facilities", sku="all_skus") -> np.array:
-        return self.env.agent_states[facility, "selling_price", "lookback", sku].copy()
+    def get_selling_price(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
+        return self.env.agent_states[warehouse, "selling_price", "lookback", sku].copy()
     
-    def get_procurement_cost(self, facility="all_facilities", sku="all_skus") -> np.array:
-        return self.env.agent_states[facility, "procurement_cost", "lookback", sku].copy()
+    def get_procurement_cost(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
+        return self.env.agent_states[warehouse, "procurement_cost", "lookback", sku].copy()
 
-    def get_sale(self, facility="all_facilities", sku="all_skus") -> np.array:
-        return self.env.agent_states[facility, "sale", "lookback", sku].copy()
+    def get_sale(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
+        return self.env.agent_states[warehouse, "sale", "lookback", sku].copy()
 
-    def get_demand(self, facility="all_facilities", sku="all_skus") -> np.array:
-        return self.env.agent_states[facility, "demand", "lookback", sku].copy()
+    def get_demand(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
+        return self.env.agent_states[warehouse, "demand", "lookback", sku].copy()
     
-    def get_average_vlt(self, facility="all_facilities", sku="all_skus") -> np.array:
-        vlts = self.env.agent_states[facility, "vlt", "lookback", sku]
-        if facility== "all_facilities":
+    def get_average_vlt(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
+        vlts = self.env.agent_states[warehouse, "vlt", "lookback", sku]
+        if warehouse== "all_warehouses":
             average_vlt = int(np.average(vlts, 1))
         else:
             average_vlt = int(np.average(vlts, 0))
         return average_vlt
     
 
-    def get_holding_cost(self, facility="all_facilities", sku="all_skus") -> np.array:
-        if facility == "all_facilities":
-            unit_storage_cost = [self.env.supply_chain[facility, "unit_storage_cost"] for facility in self.env.facility_list]
+    def get_holding_cost(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
+        if warehouse == "all_warehouses":
+            unit_storage_cost = [self.env.supply_chain[warehouse, "unit_storage_cost"] for warehouse in self.env.warehouse_list]
         else:
-            unit_storage_cost = self.env.supply_chain[facility, "unit_storage_cost"]
-        basic_holding_cost = self.env.agent_states[facility, "basic_holding_cost", "lookback", sku]
-        volume = self.env.agent_states[facility, "volume", "lookback", sku]
+            unit_storage_cost = self.env.supply_chain[warehouse, "unit_storage_cost"]
+        basic_holding_cost = self.env.agent_states[warehouse, "basic_holding_cost", "lookback", sku]
+        volume = self.env.agent_states[warehouse, "volume", "lookback", sku]
         holding_cost = basic_holding_cost + unit_storage_cost * volume
         return holding_cost
     
-    def get_replenishment_before(self, facility="all_facilities", sku="all_skus") -> np.array:
-        replenishment = self.env.agent_states[facility, "replenish", "history", sku]
-        vlt = self.get_average_vlt(facility, sku)
+    def get_replenishment_before(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
+        replenishment = self.env.agent_states[warehouse, "replenish", "history", sku]
+        vlt = self.get_average_vlt(warehouse, sku)
         replenishment_before = replenishment[-self.lookback_len-vlt:-self.lookback_len]
         return replenishment_before
     
-    def get_in_stock(self, facility="all_facilities", sku="all_skus") -> np.array:
-        return self.env.agent_states[facility, "in_stock", "today", sku].copy()
+    def get_in_stock(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
+        return self.env.agent_states[warehouse, "in_stock", "today", sku].copy()
 
-    def get_in_transit(self, facility="all_facilities", sku="all_skus") -> np.array:
-        return self.env.agent_states[facility, "in_transit", "today", sku].copy()
+    def get_in_transit(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
+        return self.env.agent_states[warehouse, "in_transit", "today", sku].copy()

@@ -16,7 +16,7 @@ class Visualizer:
         reward_info_list:str,
         start_date: datetime, 
         sku_list: list, 
-        facility_list: list, 
+        warehouse_list: list, 
         state_items: list,
         vis_path:str,
         warmup_length=0
@@ -24,16 +24,16 @@ class Visualizer:
         self.agent_states       = agent_states
         self.reward_info_list   = reward_info_list
         self.sku_list           = sku_list
-        self.facility_list      = facility_list
+        self.warehouse_list     = warehouse_list
         self.start_date         = start_date
         self.state_items        = state_items
         self.vis_path           = vis_path
         self.warmup_length      = warmup_length
         self.colors             = ["blue", "orange", "green", "aqua", "yellow", "red", "black"]
-        self.facility_to_id     = self.agent_states.facility_to_id
+        self.warehouse_to_id    = self.agent_states.warehouse_to_id
         self.sku_to_id          = self.agent_states.sku_to_id
     
-    def render_single(self, facility, sku="overview"):
+    def render_single(self, warehouse, sku="overview"):
         periods = self.agent_states.current_step
         dates = pd.date_range(self.start_date, periods=periods)
 
@@ -44,9 +44,9 @@ class Visualizer:
         state_line = Line().add_xaxis(xaxis_data = dates.tolist())
         for index, item in enumerate(self.state_items):
             if sku == "overview":
-                value = np.sum(self.agent_states[facility, item, "history", "all_skus"][self.warmup_length:], 1)
+                value = np.sum(self.agent_states[warehouse, item, "history", "all_skus"][self.warmup_length:], 1)
             else:
-                value = self.agent_states[facility, item, "history", sku][self.warmup_length:]
+                value = self.agent_states[warehouse, item, "history", sku][self.warmup_length:]
             value = value.tolist()
             color = self.colors[index % len(self.colors)]
             state_line.add_yaxis(
@@ -73,14 +73,14 @@ class Visualizer:
         
         reward_line = Line().add_xaxis(xaxis_data = dates.tolist())
         
-        facility_id  = self.facility_to_id[facility]
+        warehouse_id = self.warehouse_to_id[warehouse]
         reward_items = list(self.reward_info_list[0].keys())
         for index, item in enumerate(reward_items): 
             if sku == "overview":
-                value = [np.sum(reward_info[item][facility_id]) for reward_info in self.reward_info_list]
+                value = [np.sum(reward_info[item][warehouse_id]) for reward_info in self.reward_info_list]
             else:
                 sku_id = self.sku_to_id[sku]
-                value = [reward_info[item][facility_id][sku_id] for reward_info in self.reward_info_list]
+                value = [reward_info[item][warehouse_id][sku_id] for reward_info in self.reward_info_list]
             value = value[self.warmup_length:]
             color = self.colors[index % len(self.colors)]
             reward_line.add_yaxis(
@@ -112,15 +112,15 @@ class Visualizer:
         )
             
         tl.add(grid, "{}".format(self.start_date.strftime("%Y-%m-%d")))
-        output_name = "{}_{}.html".format(facility, sku)
+        output_name = "{}_{}.html".format(warehouse, sku)
         tl.render(os.path.join(self.vis_path, output_name))
 
     def render(self):
         os.makedirs(self.vis_path, exist_ok=True)
-        for facility in self.facility_list:
+        for warehouse in self.warehouse_list:
             for sku in self.sku_list:
-                self.render_single(facility, sku)
-            self.render_single(facility, "overview")
+                self.render_single(warehouse, sku)
+            self.render_single(warehouse, "overview")
 
 
     

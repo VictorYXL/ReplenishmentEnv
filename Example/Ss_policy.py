@@ -13,8 +13,8 @@ def Ss_policy(env, S, s):
     env.reset()
     done = False
     sku_count = len(env.get_sku_list())
-    facility_count = len(env.facility_list)
-    rewards = np.zeros((facility_count, sku_count))
+    warehouse_count = len(env.warehouse_list)
+    rewards = np.zeros((warehouse_count, sku_count))
     while not done:
         mean_demand = env.get_demand_mean()
         action = (env.get_in_stock() + env.get_in_transit()) / (mean_demand + 0.0001)
@@ -37,27 +37,27 @@ if __name__ == "__main__":
         exp_name = "Ss_policy_S1.0_s1.0"
         vis_path = os.path.join("output", env_name, exp_name)
         env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
-        balance = Ss_policy(env, [[2.0] * env.sku_count] * env.facility_count, [[2.0] * env.sku_count] * env.facility_count)
+        balance = Ss_policy(env, [[2.0] * env.sku_count] * env.warehouse_count, [[2.0] * env.sku_count] * env.warehouse_count)
         env.render()
         print(env_name, exp_name, balance)
 
         exp_name = "Ss_policy_S3.0_s3.0"
         vis_path = os.path.join("output", env_name, exp_name)
         env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
-        balance = Ss_policy(env, [[3.0] * env.sku_count] * env.facility_count, [[3.0] * env.sku_count] * env.facility_count)
+        balance = Ss_policy(env, [[3.0] * env.sku_count] * env.warehouse_count, [[3.0] * env.sku_count] * env.warehouse_count)
         env.render()
         print(env_name, exp_name, balance)
 
         exp_name = "Ss_policy_Ss_S5.0_s5.0"
         vis_path = os.path.join("output", env_name, exp_name)
         env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
-        balance = Ss_policy(env, [[5.0] * env.sku_count] * env.facility_count, [[5.0] * env.sku_count] * env.facility_count)
+        balance = Ss_policy(env, [[5.0] * env.sku_count] * env.warehouse_count, [[5.0] * env.sku_count] * env.warehouse_count)
         env.render()
         print(env_name, exp_name, balance)
 
         exp_name = "Ss_policy_Ss_S7.0_s7.0"
         vis_path = os.path.join("output", env_name, exp_name)
         env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
-        balance = Ss_policy(env, [[7.0] * env.sku_count] * env.facility_count, [[7.0] * env.sku_count] * env.facility_count)
+        balance = Ss_policy(env, [[7.0] * env.sku_count] * env.warehouse_count, [[7.0] * env.sku_count] * env.warehouse_count)
         env.render()
         print(env_name, exp_name, balance)
