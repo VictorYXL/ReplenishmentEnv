@@ -35,10 +35,10 @@ class ReplenishmentEnv(Env):
         # Look back information length
         self.lookback_len = 0
 
-        # All facilities' sku data are shored in total_data, including 3 types of sku information.
+        # All warehouses' sku data are shored in total_data, including 3 types of sku information.
         # self.total_data = [
         # {
-        #       "facility_name" : name,
+        #       "warehouse_name" : name,
         #       "shared_data"   : shared_data, 
         #       "static_data"   : static_data, 
         #       "dynamic_data"  : dynamic_data
@@ -78,7 +78,7 @@ class ReplenishmentEnv(Env):
         assert("env" in self.config)
         assert("mode" in self.config["env"])
         assert("sku_list" in self.config["env"])
-        assert("facility" in self.config)
+        assert("warehouse" in self.config)
         assert("profit_function" in self.config)
         assert("reward_function" in self.config)
         assert("output_state" in self.config)
@@ -89,13 +89,13 @@ class ReplenishmentEnv(Env):
         Build supply chain
     """
     def build_supply_chain(self) -> None:
-        self.supply_chain   = SupplyChain(self.config["facility"])
-        self.facility_list  = self.supply_chain.get_facility_list()
-        self.facility_to_id = {facility_name: index for index, facility_name in enumerate(self.facility_list)}
-        self.id_to_facility = {index: facility_name for index, facility_name in enumerate(self.facility_list)}
+        self.supply_chain   = SupplyChain(self.config["warehouse"])
+        self.warehouse_list  = self.supply_chain.get_warehouse_list()
+        self.warehouse_to_id = {warehouse_name: index for index, warehouse_name in enumerate(self.warehouse_list)}
+        self.id_to_warehouse = {index: warehouse_name for index, warehouse_name in enumerate(self.warehouse_list)}
     
     """
-        Load all facilities' sku data, including facility name, shared data, static data and dynamic data.
+        Load all warehouses' sku data, including warehouse name, shared data, static data and dynamic data.
         Only load only in __init__ function.
     """
     def load_data(self) -> None:
@@ -108,38 +108,38 @@ class ReplenishmentEnv(Env):
         else:
             self.sku_list = self.config["env"]["sku_list"]
 
-        for facility_config in self.config["facility"]:
-            assert("sku" in facility_config)
-            facility_name   = facility_config["name"]
-            sku_config      = facility_config["sku"]
+        for warehouse_config in self.config["warehouse"]:
+            assert("sku" in warehouse_config)
+            warehouse_name   = warehouse_config["name"]
+            sku_config      = warehouse_config["sku"]
 
             # Load shared info, which is shared for all skus and all dates.
             # Shared info is stored as dict = {state item: value}
-            facility_shared_data = sku_config.get("shared_data", {})
+            warehouse_shared_data = sku_config.get("shared_data", {})
 
             # Load and check static sku info, which is special for each sku but will not changed.
             # Static info is stored as N * M pd.DataFrame (N: agents_count, M: state item count)
             if "static_data" in sku_config:
-                facility_static_data = data_loader.load_as_df(sku_config["static_data"])
+                warehouse_static_data = data_loader.load_as_df(sku_config["static_data"])
             else:
-                facility_static_data = np.zeros((len(self.sku_list), 0))
+                warehouse_static_data = np.zeros((len(self.sku_list), 0))
 
             # Load and check demands info, which is different between different skus and will change by date
             # Demands info stored as dict = {state_item: N * D pd.DataFrame (N: agents_count, D: dates)}
-            facility_dynamic_data = {}
+            warehouse_dynamic_data = {}
             for dynamic_data_item in sku_config.get("dynamic_data", {}):
                 assert("name" in dynamic_data_item)
                 assert("file" in dynamic_data_item)
                 item = dynamic_data_item["name"]
                 file = dynamic_data_item["file"]
                 dynamic_value = data_loader.load_as_matrix(file)
-                facility_dynamic_data[item] = dynamic_value
+                warehouse_dynamic_data[item] = dynamic_value
 
             self.total_data.append({
-                "facility_name" : facility_name,
-                "shared_data"   : facility_shared_data, 
-                "static_data"   : facility_static_data, 
-                "dynamic_data"  : facility_dynamic_data
+                "warehouse_name" : warehouse_name,
+                "shared_data"   : warehouse_shared_data, 
+                "static_data"   : warehouse_static_data, 
+                "dynamic_data"  : warehouse_dynamic_data
             })
     
     """
@@ -153,20 +153,20 @@ class ReplenishmentEnv(Env):
     def init_data(self) -> None:
         self.picked_data = []
         for data in self.total_data:
-            picked_facility_data = {"facility_name": data["facility_name"]}
+            picked_warehouse_data = {"warehouse_name": data["warehouse_name"]}
 
             # Load shared info
-            picked_facility_data["shared_data"] = data["shared_data"]
+            picked_warehouse_data["shared_data"] = data["shared_data"]
 
             # Load static info
-            picked_facility_data["static_data"] = data["static_data"]
+            picked_warehouse_data["static_data"] = data["static_data"]
             assert(set(self.sku_list) <= set(list(data["static_data"]["SKU"].unique())))
             # Remove useless sku
-            picked_facility_data["static_data"] = data["static_data"][data["static_data"]["SKU"].isin(self.sku_list)]
+            picked_warehouse_data["static_data"] = data["static_data"][data["static_data"]["SKU"].isin(self.sku_list)]
 
             # Load and check demands info, which is different between different skus and will change by date
             # Demands info stored as dict = {state_item: N * D pd.DataFrame (N: agents_count, D: dates)}
-            picked_facility_data["dynamic_data"] = {}
+            picked_warehouse_data["dynamic_data"] = {}
             for item, ori_dynamic_value in data["dynamic_data"].items():
                 dynamic_value = copy.deepcopy(ori_dynamic_value)
                 assert(set(self.sku_list) <= set(dynamic_value.columns.unique()))
@@ -186,8 +186,8 @@ class ReplenishmentEnv(Env):
                 # Remove useless date and sku
                 dynamic_value = dynamic_value.loc[self.date_to_index.values()]
                 dynamic_value = dynamic_value[self.sku_list]
-                picked_facility_data["dynamic_data"][item] = dynamic_value.sort_values(by="Date")
-            self.picked_data.append(picked_facility_data)
+                picked_warehouse_data["dynamic_data"][item] = dynamic_value.sort_values(by="Date")
+            self.picked_data.append(picked_warehouse_data)
 
     """
         Update the self.config by update_config
@@ -206,15 +206,15 @@ class ReplenishmentEnv(Env):
     def init_env(self) -> None:
         # Get basic env info from config
         self.sku_count              = len(self.sku_list)
-        self.facility_count         = self.supply_chain.get_facility_count()
-        self.agent_count            = self.sku_count * self.facility_count
+        self.warehouse_count         = self.supply_chain.get_warehouse_count()
+        self.agent_count            = self.sku_count * self.warehouse_count
         self.integerization_sku     = self.config["env"].get("integerization_sku", False)
         self.lookback_len           = self.config["env"].get("lookback_len", 7)
         self.current_output_state   = self.config["output_state"].get("current_state", [])
         self.lookback_output_state  = self.config["output_state"].get("lookback_state", [])
         self.action_mode            = self.config["action"].get("mode", "continuous")
         self.warmup_function        = self.config["env"].get("warmup", "replenish_by_last_demand")
-        self.balance                = [self.supply_chain[facility, "init_balance"] for facility in self.facility_list]
+        self.balance                = [self.supply_chain[warehouse, "init_balance"] for warehouse in self.warehouse_list]
         self.per_balance            = np.zeros(self.agent_count)
 
         # Get mode related info from mode config
@@ -272,7 +272,7 @@ class ReplenishmentEnv(Env):
             self.reward_info_list,
             self.picked_start_date, 
             self.sku_list, 
-            self.facility_list,
+            self.warehouse_list,
             state_items,
             self.vis_path,
             self.lookback_len
@@ -282,7 +282,7 @@ class ReplenishmentEnv(Env):
 
     """
         Step orders: Replenish -> Sell -> Receive arrived skus -> Update balance
-        actions: C * N matrix, C facility count, N agent count
+        actions: C * N matrix, C warehouse count, N agent count
         contains action_idx or action_quantity, defined by action_setting in config
     """
     def step(self, actions: np.array) -> Tuple[np.array, np.array, list, dict]:
@@ -308,42 +308,42 @@ class ReplenishmentEnv(Env):
         Sell by demand and in stock
     """
     def sell(self) -> None:
-        current_demand = self.agent_states["all_facilities", "demand"]
-        in_stock = self.agent_states["all_facilities", "in_stock"]
+        current_demand = self.agent_states["all_warehouses", "demand"]
+        in_stock = self.agent_states["all_warehouses", "in_stock"]
         sale = np.where(in_stock >= current_demand, current_demand, in_stock)
-        self.agent_states["all_facilities", "sale"] = sale
-        self.agent_states["all_facilities", "in_stock"] -= sale
+        self.agent_states["all_warehouses", "sale"] = sale
+        self.agent_states["all_warehouses", "in_stock"] -= sale
 
-        # Sold sku will arrive downstream facility after vlt dates 
-        for facility in self.supply_chain.get_facility_list():
-            if facility != self.supply_chain.get_tail():
-                downstream = self.supply_chain[facility, "downstream"]
+        # Sold sku will arrive downstream warehouse after vlt dates 
+        for warehouse in self.supply_chain.get_warehouse_list():
+            if warehouse != self.supply_chain.get_tail():
+                downstream = self.supply_chain[warehouse, "downstream"]
                 vlt = self.agent_states[downstream, "vlt"]
                 max_future = min(int(max(vlt)) + 1, self.durations - self.agent_states.current_step)
                 arrived_index = np.array(range(0, max_future, 1)).reshape(-1, 1)
                 arrived_flag = np.where(arrived_index == vlt, 1, 0)
-                arrived_matrix = arrived_flag * self.agent_states[facility, "sale"]
+                arrived_matrix = arrived_flag * self.agent_states[warehouse, "sale"]
                 future_dates = np.array(range(0, max_future, 1)) + self.agent_states.current_step
                 self.agent_states[downstream, "arrived", future_dates] += arrived_matrix
-                self.agent_states[downstream, "in_transit"] += sale[self.facility_to_id[facility]]
+                self.agent_states[downstream, "in_transit"] += sale[self.warehouse_to_id[warehouse]]
 
     """
         Receive the arrived sku.
         When exceed the storage capacity, sku will be accepted in same ratio
     """
     def receive_sku(self) -> None:
-        for facility in self.supply_chain.get_facility_list():
+        for warehouse in self.supply_chain.get_warehouse_list():
             # Arrived from upstream
-            arrived = self.agent_states[facility, "arrived"]
-            self.agent_states[facility, "in_transit"] -= arrived
-            capacity = self.supply_chain[facility, "capacity"]
-            accept_amount = eval(self.supply_chain[facility, "accept_sku"])(arrived, capacity, self.agent_states, facility)
+            arrived = self.agent_states[warehouse, "arrived"]
+            self.agent_states[warehouse, "in_transit"] -= arrived
+            capacity = self.supply_chain[warehouse, "capacity"]
+            accept_amount = eval(self.supply_chain[warehouse, "accept_sku"])(arrived, capacity, self.agent_states, warehouse)
             if self.integerization_sku:
                 accept_amount = np.floor(accept_amount)
             
-            self.agent_states[facility, "excess"] = arrived - accept_amount
-            self.agent_states[facility, "accepted"] = accept_amount
-            self.agent_states[facility, "in_stock"] += accept_amount
+            self.agent_states[warehouse, "excess"] = arrived - accept_amount
+            self.agent_states[warehouse, "accepted"] = accept_amount
+            self.agent_states[warehouse, "in_stock"] += accept_amount
 
     """
         Replenish skus by actions
@@ -355,36 +355,36 @@ class ReplenishmentEnv(Env):
         if self.integerization_sku:
             replenish_amount = np.floor(replenish_amount)
         
-        # Facility's replenishment is the replenishment as upstream's demand.
-        for facility in self.supply_chain.get_facility_list():
-            facility_replenish_amount = replenish_amount[self.facility_to_id[facility]]
-            self.agent_states[facility, "replenish"] = facility_replenish_amount
-            upstream = self.supply_chain[facility, "upstream"]
+        # Warehouse's replenishment is the replenishment as upstream's demand.
+        for warehouse in self.supply_chain.get_warehouse_list():
+            warehouse_replenish_amount = replenish_amount[self.warehouse_to_id[warehouse]]
+            self.agent_states[warehouse, "replenish"] = warehouse_replenish_amount
+            upstream = self.supply_chain[warehouse, "upstream"]
             if upstream == self.supply_chain.get_super_vendor():
                 # If upstream is super_vendor, all replenishment will arrive after vlt dates
-                vlt = self.agent_states[facility, "vlt"]
+                vlt = self.agent_states[warehouse, "vlt"]
                 max_future = min(int(max(vlt)) + 1, self.durations - self.agent_states.current_step)
                 arrived_index = np.array(range(0, max_future, 1)).reshape(-1, 1)
                 arrived_flag = np.where(arrived_index == vlt, 1, 0)
-                arrived_matrix = arrived_flag * self.agent_states[facility, "replenish"]
+                arrived_matrix = arrived_flag * self.agent_states[warehouse, "replenish"]
                 future_dates = np.array(range(0, max_future, 1)) + self.agent_states.current_step
-                self.agent_states[facility, "arrived", future_dates] += arrived_matrix
-                self.agent_states[facility, "in_transit"] += facility_replenish_amount
+                self.agent_states[warehouse, "arrived", future_dates] += arrived_matrix
+                self.agent_states[warehouse, "in_transit"] += warehouse_replenish_amount
                 
             else:
                 # If upstream is not super_vendor, all replenishment will be sent as demand to upstream
                 if self.agent_states.current_step < self.durations - 1:
-                    self.agent_states[upstream, "demand"] = facility_replenish_amount
+                    self.agent_states[upstream, "demand"] = warehouse_replenish_amount
 
     def get_reward(self) -> Tuple[np.array, dict]:
         reward_info = {
-            "unit_storage_cost": [self.supply_chain[facility, "unit_storage_cost"] for facility in self.facility_list]
+            "unit_storage_cost": [self.supply_chain[warehouse, "unit_storage_cost"] for warehouse in self.warehouse_list]
         }
         reward_info = eval(self.config["reward_function"])(self.agent_states, reward_info)
         rewards = reward_info["reward"]
         return rewards, reward_info
 
-    # Output C * N * M matrix:  C is facility count, N is sku count and M is state count
+    # Output C * N * M matrix:  C is warehouse count, N is sku count and M is state count
     def get_state(self) -> dict:
         states = self.agent_states.snapshot(self.current_output_state, self.lookback_output_state)
         return states

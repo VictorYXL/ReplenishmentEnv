@@ -19,7 +19,7 @@ env:
   warmup: replenish_by_last_demand
   sku_list: ReplenishmentEnv/data/sku58/sku58.sku_list.csv
 
-facility:
+warehouse:
   - name: store
     initial_balance: 0
     capacity: 5800

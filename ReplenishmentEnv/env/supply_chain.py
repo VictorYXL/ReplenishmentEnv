@@ -1,63 +1,63 @@
 """
-    SupplyChain class, contains a list of facilities.
-    Currently, only chainlike supply chain are supprted. 
-    Each facility has only 1 upstream and 1 downstream.
-    Head facility receive skus from super_vendor and tail facility sells skus to consumer.
+    SupplyChain class, contains a list of warehouses.
+    Currently, only chainlike supply chain are supported. 
+    Each warehouse has only 1 upstream and 1 downstream.
+    Head warehouse receive skus from super_vendor and tail warehouse sells skus to consumer.
 """
 class SupplyChain:
-    def __init__(self, facility_config) -> None:
+    def __init__(self, warehouse_config) -> None:
         """
-            self.facility_dict = {
-                facility_name: [upstream_name, downstream_name, capacity],
-                facility_name: [upstream_name, downstream_name, capacity],
+            self.warehouse_dict = {
+                warehouse_name: [upstream_name, downstream_name, capacity],
+                warehouse_name: [upstream_name, downstream_name, capacity],
                 ...
             }
-            Facility's index represents the order as actions, rewards, and agent_states in env.
+            Warehouse's index represents the order as actions, rewards, and agent_states in env.
         """
-        self.facility_dict = {}
+        self.warehouse_dict = {}
         self.head = None
         self.tail = None
         self.consumer = "consumer"
         self.super_vendor = "super_vendor"
-        for index, facility in enumerate(facility_config):
-            assert("name" in facility)
-            assert("upstream" in facility)
-            assert("downstream" in facility)
-            assert("sku" in facility)
-            if facility["upstream"] == self.super_vendor:
-                self.head = facility["name"]
-            if facility["downstream"] == self.consumer:
-                self.tail = facility["name"]
-            self.facility_dict[facility["name"]] = {
-                "upstream": facility["upstream"],
-                "downstream": facility["downstream"],
-                "capacity": facility.get("capacity", 0),
-                "init_balance": facility.get("init_balance", 0),
-                "unit_storage_cost": facility.get("unit_storage_cost", 0),
-                "accept_sku": facility.get("accept_sku", "equal_accept")
+        for index, warehouse in enumerate(warehouse_config):
+            assert("name" in warehouse)
+            assert("upstream" in warehouse)
+            assert("downstream" in warehouse)
+            assert("sku" in warehouse)
+            if warehouse["upstream"] == self.super_vendor:
+                self.head = warehouse["name"]
+            if warehouse["downstream"] == self.consumer:
+                self.tail = warehouse["name"]
+            self.warehouse_dict[warehouse["name"]] = {
+                "upstream": warehouse["upstream"],
+                "downstream": warehouse["downstream"],
+                "capacity": warehouse.get("capacity", 0),
+                "init_balance": warehouse.get("init_balance", 0),
+                "unit_storage_cost": warehouse.get("unit_storage_cost", 0),
+                "accept_sku": warehouse.get("accept_sku", "equal_accept")
             }
 
         # Check for supply chain
         assert(self.head is not None)
         assert(self.tail is not None)
-        for facility, value in self.facility_dict.items():
+        for warehouse, value in self.warehouse_dict.items():
             assert(isinstance(value["upstream"], str))
             assert(isinstance(value["upstream"], str))
-            if self.facility_dict[facility]["upstream"] != "super_vendor":
-                assert(self.facility_dict[self.facility_dict[facility]["upstream"]]["downstream"] == facility)
-            if self.facility_dict[facility]["downstream"] != "consumer":
-                assert(self.facility_dict[self.facility_dict[facility]["downstream"]]["upstream"] == facility)
+            if self.warehouse_dict[warehouse]["upstream"] != "super_vendor":
+                assert(self.warehouse_dict[self.warehouse_dict[warehouse]["upstream"]]["downstream"] == warehouse)
+            if self.warehouse_dict[warehouse]["downstream"] != "consumer":
+                assert(self.warehouse_dict[self.warehouse_dict[warehouse]["downstream"]]["upstream"] == warehouse)
 
-    # index = [facility_name, item].
+    # index = [warehouse_name, item].
     # item includes upstream, downstream, capacity, init_balance and unit_storage_cost
     def __getitem__(self, index):
         assert(isinstance(index, tuple))
         assert(len(index) == 2)
-        facility_name = index[0]
+        warehouse_name = index[0]
         item = index[1]
-        assert(facility_name in self.facility_dict)
-        assert(item in self.facility_dict[facility_name])
-        return self.facility_dict[facility_name][item]
+        assert(warehouse_name in self.warehouse_dict)
+        assert(item in self.warehouse_dict[warehouse_name])
+        return self.warehouse_dict[warehouse_name][item]
     
     # Return the head index, which upstream is super_vendor
     def get_head(self) -> int:
@@ -67,11 +67,11 @@ class SupplyChain:
     def get_tail(self) -> int:
         return self.tail
 
-    def get_facility_count(self) -> int:
-        return len(self.facility_dict)
+    def get_warehouse_count(self) -> int:
+        return len(self.warehouse_dict)
 
-    def get_facility_list(self) -> list:
-        return list(self.facility_dict.keys())
+    def get_warehouse_list(self) -> list:
+        return list(self.warehouse_dict.keys())
     
     def get_consumer(self) -> str:
         return self.consumer

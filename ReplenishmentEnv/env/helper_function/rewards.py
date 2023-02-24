@@ -10,16 +10,16 @@ from ..agent_states import AgentStates
         - unit_storage_cost: unit storage cost per volume.
 """
 def reward1(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dict]:
-    selling_price      = agent_states["all_facilities", "selling_price"]
-    procurement_cost   = agent_states["all_facilities", "procurement_cost"]
-    sale               = agent_states["all_facilities", "sale"]
-    replenish          = agent_states["all_facilities", "replenish"]
-    unit_order_cost    = agent_states["all_facilities", "unit_order_cost"]
-    in_stocks          = agent_states["all_facilities", "in_stock"]
-    volume             = agent_states["all_facilities", "volume"]
-    basic_holding_cost = agent_states["all_facilities", "basic_holding_cost"]
-    demand             = agent_states["all_facilities", "demand"]
-    backlog_ratio      = agent_states["all_facilities", "backlog_ratio"]
+    selling_price      = agent_states["all_warehouses", "selling_price"]
+    procurement_cost   = agent_states["all_warehouses", "procurement_cost"]
+    sale               = agent_states["all_warehouses", "sale"]
+    replenish          = agent_states["all_warehouses", "replenish"]
+    unit_order_cost    = agent_states["all_warehouses", "unit_order_cost"]
+    in_stocks          = agent_states["all_warehouses", "in_stock"]
+    volume             = agent_states["all_warehouses", "volume"]
+    basic_holding_cost = agent_states["all_warehouses", "basic_holding_cost"]
+    demand             = agent_states["all_warehouses", "demand"]
+    backlog_ratio      = agent_states["all_warehouses", "backlog_ratio"]
     unit_storage_cost  = np.tile(np.array(profit_info.get("unit_storage_cost", 0.01)).reshape(-1,1), [1, volume.shape[-1]])
 
     # TODO: discuss whether to add (1 - excess_ratio) * excess as compensation
@@ -49,18 +49,18 @@ def reward1(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
         - unit_storage_cost: unit storage cost per volume.
 """
 def reward2(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dict]:
-    selling_price      = agent_states["all_facilities", "selling_price"]
-    procurement_cost   = agent_states["all_facilities", "procurement_cost"]
-    sale               = agent_states["all_facilities", "sale"]
-    excess             = agent_states["all_facilities", "excess"]
-    excess_ratio       = agent_states["all_facilities", "excess_ratio"]
-    replenish          = agent_states["all_facilities", "replenish"]
-    unit_order_cost    = agent_states["all_facilities", "unit_order_cost"]
-    in_stocks          = agent_states["all_facilities", "in_stock"]
-    demand             = agent_states["all_facilities", "demand"]
-    volume             = agent_states["all_facilities", "volume"]
-    basic_holding_cost = agent_states["all_facilities", "basic_holding_cost"]
-    backlog_ratio      = agent_states["all_facilities", "backlog_ratio"]
+    selling_price      = agent_states["all_warehouses", "selling_price"]
+    procurement_cost   = agent_states["all_warehouses", "procurement_cost"]
+    sale               = agent_states["all_warehouses", "sale"]
+    excess             = agent_states["all_warehouses", "excess"]
+    excess_ratio       = agent_states["all_warehouses", "excess_ratio"]
+    replenish          = agent_states["all_warehouses", "replenish"]
+    unit_order_cost    = agent_states["all_warehouses", "unit_order_cost"]
+    in_stocks          = agent_states["all_warehouses", "in_stock"]
+    demand             = agent_states["all_warehouses", "demand"]
+    volume             = agent_states["all_warehouses", "volume"]
+    basic_holding_cost = agent_states["all_warehouses", "basic_holding_cost"]
+    backlog_ratio      = agent_states["all_warehouses", "backlog_ratio"]
     unit_storage_cost  = np.tile(np.array(profit_info.get("unit_storage_cost", 0.01)).reshape(-1,1), [1, volume.shape[-1]])
 
     profit       = sale * (selling_price - procurement_cost)

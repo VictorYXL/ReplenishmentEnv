@@ -70,16 +70,16 @@ def get_single_stock_level(
         return stock_level.value
 
 def get_stock_level(env: gym.Wrapper):
-    stock_levels = np.zeros((len(env.get_facility_list()), len(env.get_sku_list())))
-    for facility_index, facility in enumerate(env.get_facility_list()):
+    stock_levels = np.zeros((len(env.get_warehouse_list()), len(env.get_sku_list())))
+    for warehouse_index, warehouse in enumerate(env.get_warehouse_list()):
         for sku_index, sku in enumerate(env.get_sku_list()):
-            selling_price        = env.get_selling_price(facility, sku)
-            procurement_cost     = env.get_procurement_cost(facility, sku)
-            demand               = env.get_demand(facility, sku)
-            average_vlt          = env.get_average_vlt(facility, sku)
-            in_stock             = env.get_in_stock(facility, sku)
-            holding_cost         = env.get_holding_cost(facility, sku)
-            replenishment_before = env.get_replenishment_before(facility, sku)
+            selling_price        = env.get_selling_price(warehouse, sku)
+            procurement_cost     = env.get_procurement_cost(warehouse, sku)
+            demand               = env.get_demand(warehouse, sku)
+            average_vlt          = env.get_average_vlt(warehouse, sku)
+            in_stock             = env.get_in_stock(warehouse, sku)
+            holding_cost         = env.get_holding_cost(warehouse, sku)
+            replenishment_before = env.get_replenishment_before(warehouse, sku)
             stock_level = get_single_stock_level(
                 selling_price, 
                 procurement_cost, 
@@ -89,7 +89,7 @@ def get_stock_level(env: gym.Wrapper):
                 replenishment_before, 
                 holding_cost
             ).reshape(-1, 1)
-            stock_levels[facility_index, sku_index] = stock_level
+            stock_levels[warehouse_index, sku_index] = stock_level
     return stock_levels
 
 def base_stock(env: gym.Wrapper, update_freq=7):
@@ -107,18 +107,26 @@ def base_stock(env: gym.Wrapper, update_freq=7):
 
 
 if __name__ == "__main__":
-    env_name = "sku50.multi_store.standard"
+    env_names = [
+        "sku50.multi_store.standard",
+        "sku100.multi_store.standard",
+        "sku200.multi_store.standard"
+        "sku500.multi_store.standard",
+        "sku1000.multi_store.standard",
+        "sku2000.multi_store.standard",
+    ]
 
-    exp_name = "static_base_stock"
-    vis_path = os.path.join("output", env_name, exp_name)
-    env = make_env(env_name, wrapper_names=["StaticWrapper"], mode="test", vis_path=vis_path)
-    balance = base_stock(env)
-    env.render()
-    print(balance)
+    for env_name in env_names:
+        exp_name = "static_base_stock"
+        vis_path = os.path.join("output", env_name, exp_name)
+        env = make_env(env_name, wrapper_names=["StaticWrapper"], mode="test", vis_path=vis_path)
+        balance = base_stock(env)
+        env.render()
+        print(env_name, exp_name, balance)
 
-    exp_name = "dynamic_base_stock"
-    vis_path = os.path.join("output", env_name, exp_name)
-    env = make_env(env_name, wrapper_names=["DynamicWrapper"], mode="test", vis_path=vis_path)
-    balance = base_stock(env)
-    env.render()
-    print(balance)
+        exp_name = "dynamic_base_stock"
+        vis_path = os.path.join("output", env_name, exp_name)
+        env = make_env(env_name, wrapper_names=["DynamicWrapper"], mode="test", vis_path=vis_path)
+        balance = base_stock(env)
+        env.render()
+        print(env_name, exp_name, balance)
