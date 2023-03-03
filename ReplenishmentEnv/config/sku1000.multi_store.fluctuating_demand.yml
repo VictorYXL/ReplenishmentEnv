@@ -18,7 +18,7 @@ env:
   warmup: replenish_by_last_demand
   sku_list: ReplenishmentEnv/data/sku2778/sku1000.fluctuating_demand.sku_list.csv
 
-facility:
+warehouse:
   - name: store1
     initial_balance: 0
     capacity: 200000
