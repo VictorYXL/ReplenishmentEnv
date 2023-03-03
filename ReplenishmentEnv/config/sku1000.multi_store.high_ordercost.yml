@@ -18,7 +18,7 @@ env:
   warmup: replenish_by_last_demand
   sku_list: ReplenishmentEnv/data/sku2778/sku1000.sku_list.csv
 
-facility:
+warehouse:
   - name: store1
     initial_balance: 0
     capacity: 200000
@@ -32,11 +32,9 @@ facility:
           file: ReplenishmentEnv/data/sku2778/sku2778.super_vendor.selling_price.csv
         - name: selling_price
           file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
-        - name: vlt
-          file: ReplenishmentEnv/data/sku2778/sku2778.store1.vlt.csv
       static_data: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
       shared_data:
-        unit_order_cost: 10
+        unit_order_cost: 20
         volume: 1
         basic_holding_cost: 0.0025
         backlog_ratio: 0.1
@@ -54,11 +52,9 @@ facility:
           file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
         - name: selling_price
           file: ReplenishmentEnv/data/sku2778/sku2778.store2.selling_price.csv
-        - name: vlt
-          file: ReplenishmentEnv/data/sku2778/sku2778.store2.vlt.csv
       static_data: ReplenishmentEnv/data/sku2778/sku2778.store2.info.csv
       shared_data:
-        unit_order_cost: 10
+        unit_order_cost: 20
         volume: 1
         basic_holding_cost: 0.0025
         backlog_ratio: 0.1
@@ -76,13 +72,11 @@ facility:
           file: ReplenishmentEnv/data/sku2778/sku2778.store2.selling_price.csv
         - name: selling_price
           file: ReplenishmentEnv/data/sku2778/sku2778.store3.selling_price.csv
-        - name: vlt
-          file: ReplenishmentEnv/data/sku2778/sku2778.store3.vlt.csv
         - name: demand
           file: ReplenishmentEnv/data/sku2778/sku2778.demand.csv
       static_data: ReplenishmentEnv/data/sku2778/sku2778.store3.info.csv
       shared_data:
-        unit_order_cost: 10
+        unit_order_cost: 20
         volume: 1
         basic_holding_cost: 0.0025
         backlog_ratio: 0.1
