@@ -8,7 +8,7 @@ from .default_wrapper import DefaultWrapper
     OracleWrapper provides the all dates info,asdasd as
     including oracle selling_price, procurement_cost, demand, vlt and unit_storage_cost.
 """
-class StaticWrapper(DefaultWrapper):
+class OracleWrapper(DefaultWrapper):
     def __init__(self, env: gym.Env) -> None:
         self.env = env
     
@@ -32,9 +32,10 @@ class StaticWrapper(DefaultWrapper):
 
     def get_sale(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
         return self.env.agent_states[warehouse, "sale", "all_dates", sku].copy()
-
+    
+    # Temporarily set demand of all warehouse to be the demand of the most downstream warehouse
     def get_demand(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        return self.env.agent_states[warehouse, "demand", "all_dates", sku].copy()
+        return self.env.agent_states["all_warehouses", "demand", "all_dates", sku][-1].copy()
     
     def get_average_vlt(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
         vlts = self.env.agent_states[warehouse, "vlt", "all_dates", sku]
