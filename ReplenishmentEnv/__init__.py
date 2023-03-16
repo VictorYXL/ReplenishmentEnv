@@ -5,6 +5,7 @@ from .wrapper.static_wrapper import StaticWrapper
 from .wrapper.observation_wrapper import ObservationWrapper
 from .wrapper.observation_wrapper_for_old_code import ObservationWrapper4OldCode
 from .wrapper.flatten_wrapper import FlattenWrapper
+from .wrapper.oracle_wrapper import OracleWrapper
 import os
 
 all = ["make_env"]
