@@ -63,12 +63,14 @@ def reward2(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
     backlog_ratio      = agent_states["all_warehouses", "backlog_ratio"]
     unit_storage_cost  = np.tile(np.array(profit_info.get("unit_storage_cost", 0.01)).reshape(-1,1), [1, volume.shape[-1]])
 
-    profit       = sale * (selling_price - procurement_cost)
-    excess_cost  = procurement_cost * excess * excess_ratio
-    order_cost   = unit_order_cost * np.where(replenish > 0, 1, 0)
-    holding_cost = (basic_holding_cost + unit_storage_cost * volume) * in_stocks
-    backlog_cost = (selling_price - procurement_cost) * (demand - sale) * backlog_ratio
-    backlog_cost = np.where(backlog_cost > 0, backlog_cost, 0)
+    profit         = sale * (selling_price - procurement_cost)
+    selling_profit = sale * selling_price
+    excess_cost    = procurement_cost * excess * excess_ratio
+    order_cost     = unit_order_cost * np.where(replenish > 0, 1, 0)
+    holding_cost   = (basic_holding_cost + unit_storage_cost * volume) * in_stocks
+    backlog_cost   = (selling_price - procurement_cost) * (demand - sale) * backlog_ratio
+    backlog_cost   = np.where(backlog_cost > 0, backlog_cost, 0)
+    buyin_cost     = np.sum(replenish * procurement_cost)
 
 
 
@@ -80,6 +82,8 @@ def reward2(agent_states: AgentStates, profit_info: dict) -> Tuple[np.array, dic
         "order_cost":   order_cost,
         "holding_cost": holding_cost,
         "backlog_cost": backlog_cost,
+        # "buyin_cost": buyin_cost,
+        # "selling_profit": selling_profit
     }
 
     return reward_info

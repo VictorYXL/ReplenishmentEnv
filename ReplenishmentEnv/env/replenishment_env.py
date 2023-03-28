@@ -35,6 +35,11 @@ class ReplenishmentEnv(Env):
         # Look back information length
         self.lookback_len = 0
 
+        # TODO:just for test
+        self.sale_list = []
+        self.profit_list = []
+        self.buyin_list = []
+        self.buyin_cost_list = []
         # All warehouses' sku data are shored in total_data, including 3 types of sku information.
         # self.total_data = [
         # {
@@ -206,7 +211,7 @@ class ReplenishmentEnv(Env):
     def init_env(self) -> None:
         # Get basic env info from config
         self.sku_count              = len(self.sku_list)
-        self.warehouse_count         = self.supply_chain.get_warehouse_count()
+        self.warehouse_count        = self.supply_chain.get_warehouse_count()
         self.agent_count            = self.sku_count * self.warehouse_count
         self.integerization_sku     = self.config["env"].get("integerization_sku", False)
         self.lookback_len           = self.config["env"].get("lookback_len", 7)
@@ -249,6 +254,7 @@ class ReplenishmentEnv(Env):
         self.durations = (self.picked_end_date - self.picked_start_date).days + 1
 
     def interception(self) -> Tuple[datetime, datetime]:
+        # if dataset is longer than horizon, then randomly select horizon's continuous days
         horizon = self.config["env"].get("horizon", 100)
         date_length = (self.end_date - self.start_date).days + 1
         start_date_index = random.randint(0, date_length - horizon)
@@ -289,7 +295,8 @@ class ReplenishmentEnv(Env):
         self.replenish(actions)
         self.sell()
         self.receive_sku()
-        self.profit, _ = self.get_reward()
+        # reward equals profit here?
+        self.profit, reward_info = self.get_reward()
         self.balance += np.sum(self.profit, axis=1)
         self.per_balance += self.profit.flatten()
 
