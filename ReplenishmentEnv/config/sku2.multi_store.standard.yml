@@ -1,4 +1,4 @@
-# Normal sku 1000 task with common setting.
+# Normal sku 50 task with common setting.
 # All skus are selected from sku2307 with minimum fluctuation demand.
 env:
   mode:
@@ -12,19 +12,59 @@ env:
     - name: test
       start_date: 2021/9/1
       end_date: 2021/10/30
-  horizon: 100
+  horizon: 200
   lookback_len: 21
   integerization_sku: True
   warmup: replenish_by_last_demand
-  sku_list: ReplenishmentEnv/data/sku2778/sku1000.sku_list.csv
+  sku_list: ReplenishmentEnv/data/sku2778/sku2.sku_list.csv
 
 warehouse:
-  - name: store3
+  - name: store1
     initial_balance: 0
-    capacity: 200000
+    capacity: 2000
     unit_storage_cost: 0.01
     accept_sku: equal_accept
     upstream: super_vendor
+    downstream: store2
+    sku:
+      dynamic_data:
+        - name: procurement_cost
+          file: ReplenishmentEnv/data/sku2778/sku2778.super_vendor.selling_price.csv
+        - name: selling_price
+          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
+      static_data: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
+      shared_data:
+        unit_order_cost: 10
+        volume: 1
+        basic_holding_cost: 0.0025
+        backlog_ratio: 0.1
+        excess_ratio: 0.5
+  - name: store2
+    initial_balance: 0
+    capacity: 2000
+    unit_storage_cost: 0.01
+    accept_sku: equal_accept
+    upstream: store1
+    downstream: store3
+    sku:
+      dynamic_data:
+        - name: procurement_cost
+          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
+        - name: selling_price
+          file: ReplenishmentEnv/data/sku2778/sku2778.store2.selling_price.csv
+      static_data: ReplenishmentEnv/data/sku2778/sku2778.store2.info.csv
+      shared_data:
+        unit_order_cost: 10
+        volume: 1
+        basic_holding_cost: 0.0025
+        backlog_ratio: 0.1
+        excess_ratio: 0.5
+  - name: store3
+    initial_balance: 0
+    capacity: 2000
+    unit_storage_cost: 0.01
+    accept_sku: equal_accept
+    upstream: store2
     downstream: consumer
     sku:
       dynamic_data:

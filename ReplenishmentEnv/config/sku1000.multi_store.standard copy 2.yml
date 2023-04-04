@@ -19,12 +19,52 @@ env:
   sku_list: ReplenishmentEnv/data/sku2778/sku1000.sku_list.csv
 
 warehouse:
-  - name: store3
+  - name: store1
     initial_balance: 0
-    capacity: 200000
-    unit_storage_cost: 0.01
+    capacity: 100000
+    unit_storage_cost: 0.0005
     accept_sku: equal_accept
     upstream: super_vendor
+    downstream: store2
+    sku:
+      dynamic_data:
+        - name: procurement_cost
+          file: ReplenishmentEnv/data/sku2778/sku2778.super_vendor.selling_price.csv
+        - name: selling_price
+          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
+      static_data: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
+      shared_data:
+        unit_order_cost: 10
+        volume: 1
+        basic_holding_cost: 0.0002
+        backlog_ratio: 0.1
+        excess_ratio: 0.5
+  - name: store2
+    initial_balance: 0
+    capacity: 100000
+    unit_storage_cost: 0.0005
+    accept_sku: equal_accept
+    upstream: store1
+    downstream: store3
+    sku:
+      dynamic_data:
+        - name: procurement_cost
+          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
+        - name: selling_price
+          file: ReplenishmentEnv/data/sku2778/sku2778.store2.selling_price.csv
+      static_data: ReplenishmentEnv/data/sku2778/sku2778.store2.info.csv
+      shared_data:
+        unit_order_cost: 10
+        volume: 1
+        basic_holding_cost: 0.0002
+        backlog_ratio: 0.1
+        excess_ratio: 0.5
+  - name: store3
+    initial_balance: 0
+    capacity: 100000
+    unit_storage_cost: 0.0005
+    accept_sku: equal_accept
+    upstream: store2
     downstream: consumer
     sku:
       dynamic_data:
@@ -38,7 +78,7 @@ warehouse:
       shared_data:
         unit_order_cost: 10
         volume: 1
-        basic_holding_cost: 0.0025
+        basic_holding_cost: 0.0002
         backlog_ratio: 0.1
         excess_ratio: 0.5
 

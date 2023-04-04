@@ -21,7 +21,7 @@ env:
 warehouse:
   - name: store1
     initial_balance: 0
-    capacity: 200000
+    capacity: 100000
     unit_storage_cost: 0.01
     accept_sku: equal_accept
     upstream: super_vendor
@@ -41,7 +41,7 @@ warehouse:
         excess_ratio: 0.5
   - name: store2
     initial_balance: 0
-    capacity: 200000
+    capacity: 100000
     unit_storage_cost: 0.01
     accept_sku: equal_accept
     upstream: store1
@@ -61,7 +61,7 @@ warehouse:
         excess_ratio: 0.5
   - name: store3
     initial_balance: 0
-    capacity: 200000
+    capacity: 100000
     unit_storage_cost: 0.01
     accept_sku: equal_accept
     upstream: store2
