@@ -59,13 +59,16 @@ class OracleWrapper(DefaultWrapper):
         holding_cost = basic_holding_cost + unit_storage_cost * volume
         return holding_cost
     
-    def get_replenishment_before(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
+    def get_replenishment_before(self, warehouse="all_warehouses", sku="all_skus", include_warmup=False) -> np.array:
         replenishment = self.env.agent_states[warehouse, "replenish", "history", sku]
         # temporarily adopt the largest vlt among all warehouses as the vlt
         vlt = self.get_average_vlt(warehouse, sku)
         if not isinstance(vlt,int):
             vlt = np.max(vlt)
-            replenishment_before = replenishment[:, -self.lookback_len-vlt:-self.lookback_len]
+            if include_warmup:
+                replenishment_before = replenishment[:, -vlt:]
+            else:
+                replenishment_before = replenishment[:, -self.lookback_len-vlt:-self.lookback_len]
         else:
             # get the number of SKUs in pipeline 
             replenishment_before = replenishment[-self.lookback_len-vlt:-self.lookback_len]
