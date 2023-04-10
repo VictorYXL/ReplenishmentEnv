@@ -12,19 +12,16 @@ sys.path.insert(0, env_dir)
 
 from ReplenishmentEnv import make_env
 
-def get_multilevel_stock_level(env: gym.Wrapper, env_mode = "test", include_warmup=False, profit_include_t0 = False):
+def get_multilevel_stock_level(env: gym.Wrapper, env_mode = "test", profit_include_t0 = False):
     stock_levels = np.zeros((len(env.get_warehouse_list()), len(env.get_sku_list())))
     for sku_index, sku in enumerate(env.get_sku_list()):
-        # print(sku_index)
         selling_price = np.array(env.get_selling_price(sku = sku))
         procurement_cost = np.array(env.get_procurement_cost(sku = sku))
-        # demand = np.array(env.get_demand(sku = sku))[-1]
         demand = np.array(env.get_demand(sku = sku))
-        average_vlt = np.array(env.get_average_vlt(sku = sku))
+        average_vlt = env.get_average_vlt(sku = sku).max()
         in_stock = np.array(env.get_in_stock(sku = sku))
         holding_cost = np.array(env.get_holding_cost(sku = sku))
-        # If include_warmup is True, then for OracleWrapper, warmup period is only used for replenishment_before
-        replenishment_before = np.array(env.get_replenishment_before(sku = sku, include_warmup=include_warmup))
+        replenishment_before = np.array(env.get_replenishment_before(sku = sku))
         if demand.ndim == 2:
             demand = demand[-1].reshape(-1)
         if env_mode == "train":
@@ -37,7 +34,7 @@ def get_multilevel_stock_level(env: gym.Wrapper, env_mode = "test", include_warm
                 holding_cost,
                 len(env.get_warehouse_list()),
                 None,
-                profit_include_t0
+                True
             ).reshape(-1,)
         else:
             stock_level = get_multilevel_single_stock_level(
@@ -49,7 +46,7 @@ def get_multilevel_stock_level(env: gym.Wrapper, env_mode = "test", include_warm
                 holding_cost,
                 len(env.get_warehouse_list()),
                 replenishment_before,
-                profit_include_t0
+                False
             ).reshape(-1,)
         stock_levels[:, sku_index] = stock_level
     return stock_levels
@@ -114,7 +111,6 @@ def get_multilevel_single_stock_level(
         if i != warehouses-1:
             interlevel_constraints.append(sales[i] == buy_in[i+1])
         else:
-            # buy_in == consumer demand
             interlevel_constraints.append(sales[i] <= demand)
     
     constraints = common_constraints + intralevel_constraints + interlevel_constraints
@@ -218,85 +214,44 @@ def summary(file_name, output_file):
 
 if __name__ == "__main__":
     env_names = [
-        # "sku50.multi_store.standard",
-        # "sku50.multi_store.low_capacity"
-        # "sku100.multi_store.standard",
-        # "sku200.multi_store.standard"
-        # "sku500.multi_store.standard",
-        # "sku1000.multi_store.standard copy 2",
-        # "sku1000.multi_store.standard copy 3",
-        # "sku1000.multi_store.standard copy 4",
-        # "sku1000.multi_store.standard copy 5",
-        "sku1000.multi_store.standard copy 9",
-        # "sku2000.multi_store.standard",
-        # "sku2.single_store.standard",
-        # "sku2.multi_store.standard",
-        # "sku1000.multi_store.standard copy 4"
+        "sku50.multi_store.standard",
+        "sku100.multi_store.standard",
+        "sku200.multi_store.standard"
+        "sku500.multi_store.standard",
+        "sku1000.multi_store.standard",
+        "sku2000.multi_store.standard",
     ]
-
+    update_config = {"start_date": "2018/8/1", "end_date": "2018/9/31"}
+    # update_config = None
     for env_name in env_names:
-        # --------------------analysis for multi store static(independent),static(correlated),static(OracleWrapperNoWarmup), dynamic(history) and dynamic21---------------------------------------
-        # exp_name = "oracle-V2"
-        # vis_path = os.path.join("output_multilevel", env_name, exp_name)
-        # env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
-        # env_train.reset()
-        # # if env_mode == 'train' and include_warmup == False, then the transit[0] is not defined;
-        # # if env_mode == 'test', include_warmup == True, then the transit[0] is defined by warmup[0];
-        # # if env_mode == 'train', include_warmup == False and profit_include_t0=True,
-        # #  then transit[0] is not defined, but store need to pay for it
-        # static_stock_levels = get_multilevel_stock_level(env_train, env_mode='test',include_warmup=True)
-        # print(np.mean(static_stock_levels,axis=1))
-        # env_test = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
-        # balance, oracle_stock_levels_list_v2, GMV, reward, reward_info = multilevel_base_stock(env_test, static_stock_levels = static_stock_levels)
-        # os.makedirs(vis_path, exist_ok=True)
-        # analyze(env_test, reward, GMV, reward_info, os.path.join(vis_path, 'analysis.csv'))
-        # summary(os.path.join(vis_path, 'analysis.csv'), os.path.join(vis_path,'summary.csv'))
-        # env_test.render()
-        # print(env_name, exp_name, balance)
-        
-        exp_name = "oracle-V3"
+        exp_name = "oracle"
         vis_path = os.path.join("output_multilevel", env_name, exp_name)
-        env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
+        env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path, update_config=update_config)
         env_train.reset()
-        static_stock_levels = get_multilevel_stock_level(env_train, env_mode='train',include_warmup=False, profit_include_t0=True)
-        print(np.mean(static_stock_levels,axis=1))
+        static_stock_levels = get_multilevel_stock_level(env_train, env_mode='train')
         env_test = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
-        balance, oracle_stock_levels_list_v3, GMV, reward, reward_info = multilevel_base_stock(env_test, static_stock_levels = static_stock_levels)
+        balance, oracle_stock_levels_list, GMV, reward, reward_info = multilevel_base_stock(env_test, static_stock_levels = static_stock_levels)
         os.makedirs(vis_path, exist_ok=True)
         analyze(env_test, reward, GMV, reward_info, os.path.join(vis_path, 'analysis.csv'))
         summary(os.path.join(vis_path, 'analysis.csv'), os.path.join(vis_path,'summary.csv'))
         env_test.render()
         print(env_name, exp_name, balance)
-        
-        # exp_name = "static-V2"
-        # vis_path = os.path.join("output_multilevel", env_name, exp_name)
-        # env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode="train", vis_path=vis_path)
-        # env_train.reset()
-        # # no warmup so the env_mode here is test
-        # static_stock_levels = get_multilevel_stock_level(env_train, env_mode = 'test', include_warmup = True)
-        # print(np.mean(static_stock_levels,axis=1))
-        # env_test = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
-        # balance, static_stock_levels_list_v2, GMV, reward, reward_info  = multilevel_base_stock(env_test, static_stock_levels = static_stock_levels)
-        # os.makedirs(vis_path, exist_ok=True)
-        # analyze(env_test, reward, GMV, reward_info, os.path.join(vis_path, 'analysis.csv'))
-        # summary(os.path.join(vis_path, 'analysis.csv'), os.path.join(vis_path,'summary.csv'))
-        # env_test.render()
-        # print(env_name, exp_name, balance)
+        print(np.mean(static_stock_levels,axis=1))
 
-        exp_name = "static-V3"
+        exp_name = "static"
         vis_path = os.path.join("output_multilevel", env_name, exp_name)
-        env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode="train", vis_path=vis_path)
+        env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode="train", vis_path=vis_path, update_config=update_config)
         env_train.reset()
         # no warmup so the env_mode here is test
-        static_stock_levels = get_multilevel_stock_level(env_train, env_mode = 'train', include_warmup = False, profit_include_t0=True)
-        print(np.mean(static_stock_levels,axis=1))
+        static_stock_levels = get_multilevel_stock_level(env_train, env_mode = 'train')
         env_test = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
-        balance, static_stock_levels_list_v3, GMV, reward, reward_info  = multilevel_base_stock(env_test, static_stock_levels = static_stock_levels)
+        balance, static_stock_levels_list, GMV, reward, reward_info  = multilevel_base_stock(env_test, static_stock_levels = static_stock_levels)
         os.makedirs(vis_path, exist_ok=True)
         analyze(env_test, reward, GMV, reward_info, os.path.join(vis_path, 'analysis.csv'))
         summary(os.path.join(vis_path, 'analysis.csv'), os.path.join(vis_path,'summary.csv'))
         env_test.render()
         print(env_name, exp_name, balance)
+        print(np.mean(static_stock_levels,axis=1))
 
         exp_name = "dynamic_history"
         vis_path = os.path.join("output_multilevel", env_name, exp_name)
@@ -318,25 +273,20 @@ if __name__ == "__main__":
         env.render()
         print(env_name, exp_name, balance)
 
-        #oracle_stock_levels_list_v2 = np.array(oracle_stock_levels_list_v2)
-        oracle_stock_levels_list_v3 = np.array(oracle_stock_levels_list_v3)
-        #static_stock_levels_list_v2 = np.array(static_stock_levels_list_v2)
-        static_stock_levels_list_v3 = np.array(static_stock_levels_list_v3)
+        oracle_stock_levels_list = np.array(oracle_stock_levels_list)
+        static_stock_levels_list = np.array(static_stock_levels_list)
         history_stock_levels_list = np.array(history_stock_levels_list)
         lookback21_stock_levels_list = np.array(lookback21_stock_levels_list)
 
         fig,ax = plt.subplots(3,1)
         for i in range(len(env.get_warehouse_list())):
-            #ax[i].plot(oracle_stock_levels_list_v2[i].sum(axis = -1))
-            #ax[i].plot(static_stock_levels_list_v2[i].sum(axis = -1))
-            ax[i].plot(oracle_stock_levels_list_v3[i].sum(axis = -1))
-            ax[i].plot(static_stock_levels_list_v3[i].sum(axis = -1))
+            ax[i].plot(oracle_stock_levels_list[i].sum(axis = -1))
+            ax[i].plot(static_stock_levels_list[i].sum(axis = -1))
             ax[i].plot(history_stock_levels_list[i].sum(axis = -1))
             ax[i].plot(lookback21_stock_levels_list[i].sum(axis = -1))
-            # ax[i].legend(['oracle-V2', 'static-V2', 'oracle-V3', 'static-V3', 'history', 'lookback21'])
             ax[i].legend(['oracle', 'static', 'history', 'lookback21'])
             ax[i].set_title('warehouse {}'.format(i+1))
             ax[i].set_ylabel('stock levels')
             ax[i].set_xlabel('time(days)')
-        savepath = os.path.join("output_multilevel", env_name,'stock level final.jpg')
+        savepath = os.path.join("output_multilevel", env_name,'stock level.jpg')
         fig.savefig(savepath)

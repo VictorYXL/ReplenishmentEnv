@@ -35,11 +35,6 @@ class ReplenishmentEnv(Env):
         # Look back information length
         self.lookback_len = 0
 
-        # TODO:just for test
-        self.sale_list = []
-        self.profit_list = []
-        self.buyin_list = []
-        self.buyin_cost_list = []
         # All warehouses' sku data are shored in total_data, including 3 types of sku information.
         # self.total_data = [
         # {
@@ -254,15 +249,10 @@ class ReplenishmentEnv(Env):
         self.durations = (self.picked_end_date - self.picked_start_date).days + 1
 
     def interception(self) -> Tuple[datetime, datetime]:
-        # Modified to use all training data
         horizon = self.config["env"].get("horizon", 100)
         date_length = (self.end_date - self.start_date).days + 1
-        # start_date_index = random.randint(0, date_length - horizon)
-        # picked_start_date = self.start_date + timedelta(start_date_index)
-        # picked_end_date = picked_start_date + timedelta(horizon - 1)
-        # set the start data of training set as the picked start date
-        picked_start_date = self.start_date
-        # picked_end_date = self.end_date
+        start_date_index = random.randint(0, date_length - horizon)
+        picked_start_date = self.start_date + timedelta(start_date_index)
         picked_end_date = picked_start_date + timedelta(horizon - 1)
         return picked_start_date, picked_end_date
 

@@ -41,7 +41,7 @@ class DynamicWrapper(DefaultWrapper):
         # for convenience, just adopt the max vlt among all warehouses
         if warehouse== "all_warehouses":
             # average_vlt = np.average(vlts, 1).astype('int64')
-            average_vlt = np.average(vlts, 1).astype('int64').max()
+            average_vlt = np.average(vlts, 1).astype('int64')
         else:
             average_vlt = int(np.average(vlts, 0))
         return average_vlt
@@ -58,12 +58,11 @@ class DynamicWrapper(DefaultWrapper):
         holding_cost = basic_holding_cost + unit_storage_cost * volume
         return holding_cost
     
-    def get_replenishment_before(self, warehouse="all_warehouses", sku="all_skus", include_warmup=False) -> np.array:
+    def get_replenishment_before(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
         replenishment = self.env.agent_states[warehouse, "replenish", "history", sku]
         # temporarily adopt the largest vlt among all warehouses as the vlt
         vlt = self.get_average_vlt(warehouse, sku)
         if not isinstance(vlt,int):
-            # TODO: temporarily use the longest vlt among all the SKU to compute replenishment before
             vlt = np.max(vlt)
             replenishment_before = replenishment[:, -self.lookback_len-vlt:-self.lookback_len]
         else:

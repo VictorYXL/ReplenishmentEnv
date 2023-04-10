@@ -42,7 +42,7 @@ class OracleWrapper(DefaultWrapper):
         # for convenience, just adopt the max vlt among all warehouses
         if warehouse== "all_warehouses":
             # average_vlt = np.average(vlts, 1).astype('int64')
-            average_vlt = np.average(vlts, 1).astype('int64').max()
+            average_vlt = np.average(vlts, 1).astype('int64')
         else:
             average_vlt = int(np.average(vlts, 0))
         return average_vlt
