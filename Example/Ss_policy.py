@@ -37,7 +37,7 @@ if __name__ == "__main__":
         exp_name = "Ss_policy_S1.0_s1.0"
         vis_path = os.path.join("output", env_name, exp_name)
         env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
-        balance = Ss_policy(env, [[2.0] * env.sku_count] * env.warehouse_count, [[2.0] * env.sku_count] * env.warehouse_count)
+        balance = Ss_policy(env, [[1.0] * env.sku_count] * env.warehouse_count, [[1.0] * env.sku_count] * env.warehouse_count)
         env.render()
         print(env_name, exp_name, balance)
 
