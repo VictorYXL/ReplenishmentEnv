@@ -24,8 +24,7 @@ def get_multilevel_stock_level(env: gym.Wrapper, env_mode = "test", profit_inclu
         replenishment_before = np.array(env.get_replenishment_before(sku = sku))
         if demand.ndim == 2:
             demand = demand[-1].reshape(-1)
-        if env_mode == "train":
-            stock_level = get_multilevel_single_stock_level(
+        stock_level = get_multilevel_single_stock_level(
                 selling_price,
                 procurement_cost,
                 demand,
@@ -35,18 +34,6 @@ def get_multilevel_stock_level(env: gym.Wrapper, env_mode = "test", profit_inclu
                 len(env.get_warehouse_list()),
                 None,
                 True
-            ).reshape(-1,)
-        else:
-            stock_level = get_multilevel_single_stock_level(
-                selling_price,
-                procurement_cost,
-                demand,
-                average_vlt,
-                in_stock,
-                holding_cost,
-                len(env.get_warehouse_list()),
-                replenishment_before,
-                False
             ).reshape(-1,)
         stock_levels[:, sku_index] = stock_level
     return stock_levels
@@ -80,32 +67,20 @@ def get_multilevel_single_stock_level(
         buy >= 0
     ]
     intralevel_constraints = [
-        stocks[:, 0] == in_stock,
         stocks[:, 1: time_hrz_len + 1] == stocks[:, 0:time_hrz_len] + buy_arv - sales,
         transits[:, 1: time_hrz_len + 1] == transits[:, 0:time_hrz_len] - buy_arv + buy_in,
         sales <= stocks[:, 0:time_hrz_len],
         buy_in == buy[:, vlt: time_hrz_len + vlt],
         buy_arv == buy[:, 0:time_hrz_len],
         stock_level == stocks[:, 0:time_hrz_len] + transits[:, 0:time_hrz_len] + buy_in,
+        # transit[0] equals replenishment before t=0
+        transits[:,0] == cp.sum(buy[:,:vlt],axis=1)
     ]
-    if profit_include_t0:
-        intralevel_constraints.append(
+    intralevel_constraints.append(
             profit == cp.sum(
-                cp.multiply(selling_price, sales) - cp.multiply(procurement_cost, buy_in) - cp.multiply(holding_cost,
-                                                                                                        stocks[:, 1:]),
-            ) - cp.sum(cp.multiply(procurement_cost[:, 0], transits[:, 0]))
+                cp.multiply(selling_price, sales) - cp.multiply(procurement_cost, buy_in) - cp.multiply(holding_cost,stocks[:, 1:]),
+            ) - cp.sum(cp.multiply(procurement_cost[:, 0], transits[:, 0])) - cp.sum(cp.multiply(procurement_cost[:, 0], stocks[:,0]))
         )
-    else:
-        intralevel_constraints.append(
-            profit == cp.sum(
-                cp.multiply(selling_price, sales) - cp.multiply(procurement_cost, buy_in) - cp.multiply(holding_cost,
-                                                                                                        stocks[:, 1:]),
-            )
-        )
-    if isinstance(replenishment_before, np.ndarray):
-        intralevel_constraints.append(transits[:, 0] == np.sum(replenishment_before, axis = 1))
-        if len_replenishment_before>0:
-            intralevel_constraints.append(buy[:, :len_replenishment_before] == replenishment_before)
     interlevel_constraints = []
     for i in range(warehouses):
         if i != warehouses-1:
@@ -120,11 +95,8 @@ def get_multilevel_single_stock_level(
     prob.solve(solver=cp.SCIP, verbose=False)
     if prob.status != 'optimal':
         prob.solve(solver=cp.GLPK_MI, verbose=False, max_iters = 1000)
-    # if prob.status != 'optimal':
-    assert prob.status == 'optimal', 'can\'t find optimal solution for SKU stock level'
-
-
-    # prob.solve(solver=cp.GLPK_MI, verbose=False)
+    if prob.status != 'optimal':
+        assert prob.status == 'optimal', 'can\'t find optimal solution for SKU stock level'
     return stock_level.value
 
 def multilevel_base_stock(env: gym.Wrapper, update_freq =7, static_stock_levels = None):
@@ -166,6 +138,45 @@ def multilevel_base_stock(env: gym.Wrapper, update_freq =7, static_stock_levels 
     GMV = np.sum(sale * selling_price, axis = 1)
     return info["balance"], stock_level_list, GMV, total_reward, reward_info
 
+def dynamic_base_stock(env: gym.Wrapper, update_freq =7, static_stock_levels = None):
+    env.reset()
+    current_step = 0
+    is_done = False
+    sku_count = len(env.get_sku_list())
+    total_reward = np.zeros((env.warehouse_count, sku_count))
+    stock_level_list = [[] for i in range(len(env.get_warehouse_list()))]
+    reward_info = {
+        "profit": np.zeros(((env.warehouse_count, sku_count))),
+        "excess_cost": np.zeros(((env.warehouse_count, sku_count))),
+        "order_cost": np.zeros(((env.warehouse_count, sku_count))),
+        "holding_cost": np.zeros(((env.warehouse_count, sku_count))),
+        "backlog_cost": np.zeros(((env.warehouse_count, sku_count)))
+    }
+    while not is_done:
+        if current_step % update_freq == 0:
+            if isinstance(static_stock_levels, np.ndarray):
+                # read stock level for dynamic
+                stock_levels = static_stock_levels[:,current_step,:]
+            else:
+                stock_levels = get_multilevel_stock_level(env)
+        for i in range(len(env.get_warehouse_list())):
+            stock_level_list[i].append(stock_levels[i])
+
+        replenish = stock_levels - env.get_in_stock() - env.get_in_transit()
+        replenish = np.where(replenish >= 0, replenish, 0) / (env.get_demand_mean() + 0.00001)
+        states, reward, is_done, info = env.step(replenish)
+        total_reward += reward
+        reward_info["profit"] += info["reward_info"]["profit"]
+        reward_info["excess_cost"] += info["reward_info"]["excess_cost"]
+        reward_info["order_cost"] += info["reward_info"]["order_cost"]
+        reward_info["holding_cost"] += info["reward_info"]["holding_cost"]
+        reward_info["backlog_cost"] += info["reward_info"]["backlog_cost"]
+        current_step += 1
+
+    sale = env.agent_states["all_warehouses", "sale", slice(env.lookback_len, None, None), "all_skus"].copy()
+    selling_price = env.agent_states["all_warehouses", "selling_price", slice(env.lookback_len, None, None), "all_skus"].copy()
+    GMV = np.sum(sale * selling_price, axis = 1)
+    return info["balance"], stock_level_list, GMV, total_reward, reward_info
 
 def analyze(env, reward, GMV, reward_info, output_file):
     in_stock = env.agent_states["all_warehouses", "in_stock", "all_dates", "all_skus"].copy()
@@ -221,15 +232,15 @@ if __name__ == "__main__":
         "sku1000.multi_store.standard",
         "sku2000.multi_store.standard",
     ]
-    update_config = {"start_date": "2018/8/1", "end_date": "2018/9/31"}
-    # update_config = None
+    # update_config = {"env":{"mode":{"start_date": "2018/8/1", "end_date": "2018/9/31"}}}
+    update_config = None
     for env_name in env_names:
-        exp_name = "oracle"
+        exp_name = "oracle no warmup"
         vis_path = os.path.join("output_multilevel", env_name, exp_name)
-        env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path, update_config=update_config)
+        env_train = make_env(env_name, wrapper_names=["OracleWrapperNoWarmup"], mode="test", vis_path=vis_path, update_config=update_config)
         env_train.reset()
         static_stock_levels = get_multilevel_stock_level(env_train, env_mode='train')
-        env_test = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
+        env_test = make_env(env_name, wrapper_names=["OracleWrapperNoWarmup"], mode="test", vis_path=vis_path)
         balance, oracle_stock_levels_list, GMV, reward, reward_info = multilevel_base_stock(env_test, static_stock_levels = static_stock_levels)
         os.makedirs(vis_path, exist_ok=True)
         analyze(env_test, reward, GMV, reward_info, os.path.join(vis_path, 'analysis.csv'))
@@ -238,13 +249,13 @@ if __name__ == "__main__":
         print(env_name, exp_name, balance)
         print(np.mean(static_stock_levels,axis=1))
 
-        exp_name = "static"
+        exp_name = "static no warmup"
         vis_path = os.path.join("output_multilevel", env_name, exp_name)
-        env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode="train", vis_path=vis_path, update_config=update_config)
+        env_train = make_env(env_name, wrapper_names=["OracleWrapperNoWarmup"], mode="train", vis_path=vis_path, update_config=update_config)
         env_train.reset()
         # no warmup so the env_mode here is test
         static_stock_levels = get_multilevel_stock_level(env_train, env_mode = 'train')
-        env_test = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
+        env_test = make_env(env_name, wrapper_names=["OracleWrapperNoWarmup"], mode="test", vis_path=vis_path)
         balance, static_stock_levels_list, GMV, reward, reward_info  = multilevel_base_stock(env_test, static_stock_levels = static_stock_levels)
         os.makedirs(vis_path, exist_ok=True)
         analyze(env_test, reward, GMV, reward_info, os.path.join(vis_path, 'analysis.csv'))
@@ -267,6 +278,7 @@ if __name__ == "__main__":
         vis_path = os.path.join("output_multilevel", env_name, exp_name)
         env = make_env(env_name, wrapper_names=["DynamicWrapper"], mode="test", vis_path=vis_path)
         balance, lookback21_stock_levels_list, GMV, reward, reward_info  = multilevel_base_stock(env)
+        print(env_name, exp_name, balance)
         os.makedirs(vis_path, exist_ok=True)
         analyze(env, reward, GMV, reward_info, os.path.join(vis_path, 'analysis.csv'))
         summary(os.path.join(vis_path, 'analysis.csv'), os.path.join(vis_path,'summary.csv'))
@@ -288,5 +300,5 @@ if __name__ == "__main__":
             ax[i].set_title('warehouse {}'.format(i+1))
             ax[i].set_ylabel('stock levels')
             ax[i].set_xlabel('time(days)')
-        savepath = os.path.join("output_multilevel", env_name,'stock level.jpg')
+        savepath = os.path.join("output_multilevel", env_name,'time shifted dynamic stock level.jpg')
         fig.savefig(savepath)
