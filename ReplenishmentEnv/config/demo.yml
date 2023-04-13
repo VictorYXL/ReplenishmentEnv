@@ -102,7 +102,6 @@ action:
 # * Output state for agents. 
 # States will be passed as N * M matrix. 
 # M is state count and N is agent count(current_state + lookback_state * lookback_length)
-# TODO: This may be removed in next version and output states are passed by wrapper.
 output_state:
   current_state:
     [selling_price, procurement_cost, vlt, volume, 

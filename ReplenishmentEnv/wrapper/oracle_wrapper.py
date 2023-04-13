@@ -25,24 +25,24 @@ class OracleWrapper(DefaultWrapper):
         return self.env.reset()
     
     def get_selling_price(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        return self.env.agent_states[warehouse, "selling_price", "all_dates", sku].copy()
+        return self.env.agent_states[warehouse, "selling_price", slice(self.env.lookback_len, None, None), sku].copy()
     
     def get_procurement_cost(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        return self.env.agent_states[warehouse, "procurement_cost", "all_dates", sku].copy()
+        return self.env.agent_states[warehouse, "procurement_cost", slice(self.env.lookback_len, None, None), sku].copy()
 
     def get_sale(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        return self.env.agent_states[warehouse, "sale", "all_dates", sku].copy()
+        return self.env.agent_states[warehouse, "sale", slice(self.env.lookback_len, None, None), sku].copy()
     
     # Temporarily set demand of all warehouse to be the demand of the most downstream warehouse
     def get_demand(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        return self.env.agent_states["all_warehouses", "demand", "all_dates", sku].copy()
+        return self.env.agent_states["all_warehouses", "demand", slice(self.env.lookback_len, None, None), sku][-1].copy()
     
     def get_average_vlt(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        vlts = self.env.agent_states[warehouse, "vlt", "all_dates", sku]
+        vlts = self.env.agent_states[warehouse, "vlt", slice(self.env.lookback_len, None, None), sku]
         # for convenience, just adopt the max vlt among all warehouses
         if warehouse== "all_warehouses":
             # average_vlt = np.average(vlts, 1).astype('int64')
-            average_vlt = np.average(vlts, 1).astype('int64')
+            average_vlt = np.average(vlts, 1).astype('int64').max()
         else:
             average_vlt = int(np.average(vlts, 0))
         return average_vlt
@@ -54,25 +54,10 @@ class OracleWrapper(DefaultWrapper):
             unit_storage_cost = np.array([self.env.supply_chain[warehouse, "unit_storage_cost"] for warehouse in self.env.warehouse_list]).reshape((-1, 1))
         else:
             unit_storage_cost = self.env.supply_chain[warehouse, "unit_storage_cost"]
-        basic_holding_cost = self.env.agent_states[warehouse, "basic_holding_cost", "all_dates", sku]
-        volume = self.env.agent_states[warehouse, "volume", "all_dates", sku]
+        basic_holding_cost = self.env.agent_states[warehouse, "basic_holding_cost", slice(self.env.lookback_len, None, None), sku]
+        volume = self.env.agent_states[warehouse, "volume", slice(self.env.lookback_len, None, None), sku]
         holding_cost = basic_holding_cost + unit_storage_cost * volume
         return holding_cost
-    
-    def get_replenishment_before(self, warehouse="all_warehouses", sku="all_skus", include_warmup=False) -> np.array:
-        replenishment = self.env.agent_states[warehouse, "replenish", "history", sku]
-        # temporarily adopt the largest vlt among all warehouses as the vlt
-        vlt = self.get_average_vlt(warehouse, sku)
-        if not isinstance(vlt,int):
-            vlt = np.max(vlt)
-            if include_warmup:
-                replenishment_before = replenishment[:, -vlt:]
-            else:
-                replenishment_before = replenishment[:, -self.lookback_len-vlt:-self.lookback_len]
-        else:
-            # get the number of SKUs in pipeline 
-            replenishment_before = replenishment[-self.lookback_len-vlt:-self.lookback_len]
-        return replenishment_before
     
     def get_in_stock(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
         return self.env.agent_states[warehouse, "in_stock", "today", sku].copy()

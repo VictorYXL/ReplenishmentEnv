@@ -289,7 +289,6 @@ class ReplenishmentEnv(Env):
         self.replenish(actions)
         self.sell()
         self.receive_sku()
-        # reward equals profit here?
         self.profit, reward_info = self.get_reward()
         self.balance += np.sum(self.profit, axis=1)
         self.per_balance += self.profit.flatten()

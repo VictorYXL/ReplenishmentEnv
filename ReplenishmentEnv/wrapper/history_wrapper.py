@@ -5,10 +5,10 @@ from .default_wrapper import DefaultWrapper
 
 
 """
-    StaticWrapper provides the history info,
+    HistoryWrapper provides the history info,
     including oracle selling_price, procurement_cost, demand, vlt and unit_storage_cost.
 """
-class StaticWrapper(DefaultWrapper):
+class HistoryWrapper(DefaultWrapper):
     def __init__(self, env: gym.Env) -> None:
         self.env = env
     
@@ -57,18 +57,6 @@ class StaticWrapper(DefaultWrapper):
         volume = self.env.agent_states[warehouse, "volume", "history", sku]
         holding_cost = basic_holding_cost + unit_storage_cost * volume
         return holding_cost
-    
-    def get_replenishment_before(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        replenishment = self.env.agent_states[warehouse, "replenish", "history", sku]
-        # temporarily adopt the largest vlt among all warehouses as the vlt
-        vlt = self.get_average_vlt(warehouse, sku)
-        if not isinstance(vlt,int):
-            vlt = np.max(vlt)
-            replenishment_before = replenishment[:, -self.lookback_len-vlt:-self.lookback_len]
-        else:
-            # get the number of SKUs in pipeline 
-            replenishment_before = replenishment[-self.lookback_len-vlt:-self.lookback_len]
-        return replenishment_before
     
     def get_in_stock(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
         return self.env.agent_states[warehouse, "in_stock", "today", sku].copy()

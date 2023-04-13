@@ -40,7 +40,6 @@ class DynamicWrapper(DefaultWrapper):
         vlts = self.env.agent_states[warehouse, "vlt", "lookback", sku]
         # for convenience, just adopt the max vlt among all warehouses
         if warehouse== "all_warehouses":
-            # average_vlt = np.average(vlts, 1).astype('int64')
             average_vlt = np.average(vlts, 1).astype('int64')
         else:
             average_vlt = int(np.average(vlts, 0))
@@ -57,18 +56,6 @@ class DynamicWrapper(DefaultWrapper):
         volume = self.env.agent_states[warehouse, "volume", "lookback", sku]
         holding_cost = basic_holding_cost + unit_storage_cost * volume
         return holding_cost
-    
-    def get_replenishment_before(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        replenishment = self.env.agent_states[warehouse, "replenish", "history", sku]
-        # temporarily adopt the largest vlt among all warehouses as the vlt
-        vlt = self.get_average_vlt(warehouse, sku)
-        if not isinstance(vlt,int):
-            vlt = np.max(vlt)
-            replenishment_before = replenishment[:, -self.lookback_len-vlt:-self.lookback_len]
-        else:
-            # get the number of SKUs in pipeline 
-            replenishment_before = replenishment[-self.lookback_len-vlt:-self.lookback_len]
-        return replenishment_before
     
     def get_in_stock(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
         return self.env.agent_states[warehouse, "in_stock", "today", sku].copy()
