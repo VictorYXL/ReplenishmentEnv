@@ -4,8 +4,8 @@ env:
   mode:
     - name: train
       start_date: 2018/8/1
-      end_date: 2018/9/30
-      random_interception: False
+      end_date: 2021/6/30
+      random_interception: True
     - name: validation
       start_date: 2021/7/1
       end_date: 2021/8/31 
