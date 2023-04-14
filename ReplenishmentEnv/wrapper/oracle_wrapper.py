@@ -5,10 +5,10 @@ from .default_wrapper import DefaultWrapper
 
 
 """
-    DynamicWrapper provides the lookback info,
+    OracleWrapper provides the all dates info,asdasd as
     including oracle selling_price, procurement_cost, demand, vlt and unit_storage_cost.
 """
-class DynamicWrapper(DefaultWrapper):
+class OracleWrapper(DefaultWrapper):
     def __init__(self, env: gym.Env) -> None:
         self.env = env
     
@@ -22,25 +22,27 @@ class DynamicWrapper(DefaultWrapper):
         To avoid the obfuscation, update_config is only needed when reset with update.
     """
     def reset(self) -> None:
-        self.env.reset()
+        return self.env.reset()
     
     def get_selling_price(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        return self.env.agent_states[warehouse, "selling_price", "lookback", sku].copy()
+        return self.env.agent_states[warehouse, "selling_price", slice(self.env.lookback_len, None, None), sku].copy()
     
     def get_procurement_cost(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        return self.env.agent_states[warehouse, "procurement_cost", "lookback", sku].copy()
+        return self.env.agent_states[warehouse, "procurement_cost", slice(self.env.lookback_len, None, None), sku].copy()
 
     def get_sale(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        return self.env.agent_states[warehouse, "sale", "lookback", sku].copy()
-
+        return self.env.agent_states[warehouse, "sale", slice(self.env.lookback_len, None, None), sku].copy()
+    
+    # Temporarily set demand of all warehouse to be the demand of the most downstream warehouse
     def get_demand(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        return self.env.agent_states[warehouse, "demand", "lookback", sku].copy()
+        return self.env.agent_states["all_warehouses", "demand", slice(self.env.lookback_len, None, None), sku][-1].copy()
     
     def get_average_vlt(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        vlts = self.env.agent_states[warehouse, "vlt", "lookback", sku]
+        vlts = self.env.agent_states[warehouse, "vlt", slice(self.env.lookback_len, None, None), sku]
         # for convenience, just adopt the max vlt among all warehouses
         if warehouse== "all_warehouses":
-            average_vlt = np.average(vlts, 1).astype('int64')
+            # average_vlt = np.average(vlts, 1).astype('int64')
+            average_vlt = np.average(vlts, 1).astype('int64').max()
         else:
             average_vlt = int(np.average(vlts, 0))
         return average_vlt
@@ -49,11 +51,11 @@ class DynamicWrapper(DefaultWrapper):
     def get_holding_cost(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
         if warehouse == "all_warehouses":
             # Convert to np.ndarray type and reshape
-            unit_storage_cost = np.array([self.env.supply_chain[warehouse, "unit_storage_cost"] for warehouse in self.env.warehouse_list]).reshape((-1,1))
+            unit_storage_cost = np.array([self.env.supply_chain[warehouse, "unit_storage_cost"] for warehouse in self.env.warehouse_list]).reshape((-1, 1))
         else:
             unit_storage_cost = self.env.supply_chain[warehouse, "unit_storage_cost"]
-        basic_holding_cost = self.env.agent_states[warehouse, "basic_holding_cost", "lookback", sku]
-        volume = self.env.agent_states[warehouse, "volume", "lookback", sku]
+        basic_holding_cost = self.env.agent_states[warehouse, "basic_holding_cost", slice(self.env.lookback_len, None, None), sku]
+        volume = self.env.agent_states[warehouse, "volume", slice(self.env.lookback_len, None, None), sku]
         holding_cost = basic_holding_cost + unit_storage_cost * volume
         return holding_cost
     

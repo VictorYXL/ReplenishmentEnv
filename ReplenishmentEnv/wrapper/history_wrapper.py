@@ -5,10 +5,10 @@ from .default_wrapper import DefaultWrapper
 
 
 """
-    StaticWrapper provides the history info,
+    HistoryWrapper provides the history info,
     including oracle selling_price, procurement_cost, demand, vlt and unit_storage_cost.
 """
-class StaticWrapper(DefaultWrapper):
+class HistoryWrapper(DefaultWrapper):
     def __init__(self, env: gym.Env) -> None:
         self.env = env
     
@@ -38,8 +38,10 @@ class StaticWrapper(DefaultWrapper):
     
     def get_average_vlt(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
         vlts = self.env.agent_states[warehouse, "vlt", "history", sku]
+        # for convenience, just adopt the max vlt among all warehouses
         if warehouse== "all_warehouses":
-            average_vlt = int(np.average(vlts, 1))
+            # average_vlt = np.average(vlts, 1).astype('int64')
+            average_vlt = np.average(vlts, 1).astype('int64')
         else:
             average_vlt = int(np.average(vlts, 0))
         return average_vlt
@@ -47,19 +49,14 @@ class StaticWrapper(DefaultWrapper):
 
     def get_holding_cost(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
         if warehouse == "all_warehouses":
-            unit_storage_cost = [self.env.supply_chain[warehouse, "unit_storage_cost"] for warehouse in self.env.warehouse_list]
+            # Convert to np.ndarray type and reshape
+            unit_storage_cost = np.array([self.env.supply_chain[warehouse, "unit_storage_cost"] for warehouse in self.env.warehouse_list]).reshape((-1, 1))
         else:
             unit_storage_cost = self.env.supply_chain[warehouse, "unit_storage_cost"]
         basic_holding_cost = self.env.agent_states[warehouse, "basic_holding_cost", "history", sku]
         volume = self.env.agent_states[warehouse, "volume", "history", sku]
         holding_cost = basic_holding_cost + unit_storage_cost * volume
         return holding_cost
-    
-    def get_replenishment_before(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
-        replenishment = self.env.agent_states[warehouse, "replenish", "history", sku]
-        vlt = self.get_average_vlt(warehouse, sku)
-        replenishment_before = replenishment[-self.lookback_len-vlt:-self.lookback_len]
-        return replenishment_before
     
     def get_in_stock(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
         return self.env.agent_states[warehouse, "in_stock", "today", sku].copy()

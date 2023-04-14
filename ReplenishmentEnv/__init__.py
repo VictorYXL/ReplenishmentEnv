@@ -1,10 +1,11 @@
 from .env.replenishment_env import ReplenishmentEnv
 from .wrapper.default_wrapper import DefaultWrapper
 from .wrapper.dynamic_wrapper import DynamicWrapper
-from .wrapper.static_wrapper import StaticWrapper
+from .wrapper.history_wrapper import HistoryWrapper
 from .wrapper.observation_wrapper import ObservationWrapper
 from .wrapper.observation_wrapper_for_old_code import ObservationWrapper4OldCode
 from .wrapper.flatten_wrapper import FlattenWrapper
+from .wrapper.oracle_wrapper import OracleWrapper
 import os
 
 all = ["make_env"]
