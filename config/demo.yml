@@ -1,0 +1,118 @@
+# Demo config to show the structure
+# items with * are necessary.
+
+# * Whole env setting
+env:
+  mode:
+    - name: train                   # * mode name
+      start_date: 2011/01/01        # * Start date for train mode.
+      end_date: 2011/10/31          # * End date for train mode.
+      random_interception: True     # Flag to random interception subset with horizon length. Default is False.
+    - name: validation
+      start_date: 2011/11/01
+      end_date  : 2011/11/30
+    - name: test
+      start_date: 2011/12/01
+      end_date  : 2011/12/31
+  horizon: 100                      # Horizon for random sample after reset. Default is 100.
+  lookback_len: 21                  # Look back length setting in env.
+  integerization_sku: True          # Whether to integerization sku in sell and replenishment. Default is False.
+  warmup: replenish_by_last_demand  # Warmup lookback_len dates before start_date.
+  # * Sku list for env.
+  # sku_list in list are also supported like [SKU0, SKU1, SKU2]
+  # sku_list file should start with SKU
+  sku_list: ReplenishmentEnv/data/sku2778/sku50.sku_list.csv 
+
+# * Warehouse info
+warehouse:
+  - name: store1              # * Warehouse name
+    initial_balance: 0        # * Init balance for warehouse. 
+    capacity: 10000           # * Capacity for warehouse. 
+    unit_storage_cost: 0.01   # * Unit storage cost per volume
+    accept_sku: equal_accept         # Aeecpt sku funtion when excess the capacity limitaion. Default is equal_accept.
+    upstream: super_vendor    # * Upstream for warehouse. Super_vendor can provide unlimited skus.
+    downstream: store2        # * Downstream for warehouse. Consumers represents the actual demand.
+    sku:
+      # Dynamic info that will changed every day. 
+      # Each item is interpreted by a single file with columns "Date,SKU0,SKU1,SKU2,..."
+      dynamic_data:
+        - name: procurement_cost
+          file: ReplenishmentEnv/data/sku2778/sku2778.super_vendor.selling_price.csv
+        - name: selling_price
+          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
+      # Static info that are different between skus and will not changed every day.
+      # All items are interpreted by a singl file with columns "SKU,item1,item2,..."
+      static_data: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
+      # Shared info that all skus has the same value for some feature and will not changed.
+      shared_data:
+        unit_order_cost: 10
+        volume: 1
+        basic_holding_cost: 0.0025
+        backlog_ratio: 0.1
+        excess_ratio: 0.5
+      # Necessary feature for skus include:
+      # demand, selling_price, procurement_cost, init_stock, vlt, unit_order_cost, 
+      # volume, storage_cost, basic_holding_cost, backlog_ratio and excess_ratio 
+  - name: store2
+    initial_balance: 0 
+    capacity: 10000 
+    unit_storage_cost: 0.01
+    accept_sku: equal_accept
+    upstream: store1
+    downstream: consumer
+    sku:
+      dynamic_data:
+        - name: procurement_cost
+          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
+        - name: selling_price
+          file: ReplenishmentEnv/data/sku2778/sku2778.store2.selling_price.csv
+        - name: demand
+          file: ReplenishmentEnv/data/sku2778/sku2778.demand.csv
+      static_data: ReplenishmentEnv/data/sku2778/sku2778.store2.info.csv
+      shared_data:
+        unit_order_cost: 10
+        volume: 1
+        storage_cost: 0.0025
+        basic_holding_cost: 0.00002
+        backlog_ratio: 0.1
+        excess_ratio: 0.5
+
+# * profit setting. profit is internal in env.
+# Currently, reward1 and reward2 are supported.
+profit_function: reward2
+
+# * reward setting. profit is internal in env.
+# Currently, reward1 and reward2 are supported.
+reward_function: reward2
+
+# * action setting. Currently, 4 mode for action are supported:
+# continuous:             replenishment_quantity = action
+# discrete:               replenishment_quantity = action_space[action]
+# demand_mean_continuous: replenishment = action * demand_mean
+# demand_mean_discrete:   replenishment = action_space[action] * demand_mean
+action:
+  mode: demand_mean_discrete
+  space: [
+      0.00, 0.16, 0.33, 0.40, 0.45, 0.50, 0.55, 0.60, 0.66, 0.83, 
+      1.00, 1.16, 1.33, 1.50, 1.66, 1.83, 2.00, 2.16, 2.33, 2.50, 
+      2.66, 2.83, 3.00, 3.16, 3.33, 3.50, 3.66, 3.83, 4.00, 5.00, 
+      6.00, 7.00, 9.00, 12.00
+    ]
+
+# * Output state for agents. 
+# States will be passed as N * M matrix. 
+# M is state count and N is agent count(current_state + lookback_state * lookback_length)
+# TODO: This may be removed in next version and output states are passed by wrapper.
+output_state:
+  current_state:
+    [selling_price, procurement_cost, vlt, volume, 
+    unit_order_cost, replenish, excess, in_stock, in_transit]
+  lookback_state:
+    [demand]
+
+visualization:
+  output_path: output   # visualization output dir
+  time_flag: True
+  state:                # visualization state items
+    [demand, sale, arrived, replenish,
+    excess, accepted, in_stock, in_transit,]
