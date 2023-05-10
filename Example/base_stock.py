@@ -13,7 +13,6 @@ sys.path.insert(0, env_dir)
 from ReplenishmentEnv import make_env
 
 def get_multilevel_stock_level(env: gym.Wrapper):
-    env.reset()
     stock_levels = np.zeros((len(env.get_warehouse_list()), len(env.get_sku_list())))
     for sku_index, sku in enumerate(env.get_sku_list()):
         selling_price = np.array(env.get_selling_price(sku = sku))
@@ -118,6 +117,7 @@ def bsp_oracle(env_name):
     exp_name = "bsp_oracle"
     vis_path = os.path.join("output", env_name, exp_name)
     env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
+    env_train.reset()
     static_stock_levels = get_multilevel_stock_level(env_train)
     env_test = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
     balance = multilevel_base_stock(env_test, static_stock_levels = static_stock_levels)
@@ -128,6 +128,7 @@ def bsp_static(env_name):
     exp_name = "bsp_static"
     vis_path = os.path.join("output", env_name, exp_name)
     env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode="train", vis_path=vis_path)
+    env_train.reset()
     static_stock_levels = get_multilevel_stock_level(env_train)
     env_test = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
     balance = multilevel_base_stock(env_test, static_stock_levels = static_stock_levels)
