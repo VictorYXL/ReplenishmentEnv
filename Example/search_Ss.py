@@ -20,7 +20,7 @@ def Ss_policy(env, S, s):
         action = np.where(action < s, S - action, 0)
         state, reward, done, info = env.step(action)
         total_reward += reward
-    return info["balance"]
+    return total_reward, info["balance"]
 
 def search_shared_Ss(env, S_range=np.arange(0.0, 12.1, 1)):
     state = env.reset()
@@ -50,7 +50,7 @@ def search_independent_Ss(env, search_range=np.arange(0.0, 12.1, 1)):
     
     for S in search_range:
         for s in np.arange(0, S + 0.1, 0.5):
-            reward          = Ss_policy(env, [[S] * sku_count]*env.warehouse_count, [[s] * sku_count]*env.warehouse_count)
+            reward, _       = Ss_policy(env, [[S] * sku_count]*env.warehouse_count, [[s] * sku_count]*env.warehouse_count)
             best_S          = np.where(reward > max_reward, S, best_S)
             best_s          = np.where(reward > max_reward, s, best_s)
             max_reward      = np.where(reward > max_reward, reward, max_reward)
@@ -76,7 +76,7 @@ def search_multilevel_interlevel_independent_Ss(env, S_range=np.arange(6, 12.1, 
                             S = np.array([[S1] * sku_count] + [[S2] * sku_count] + [[S3] * sku_count])
                             s = np.array([[s1] * sku_count] + [[s2] * sku_count] + [[s3] * sku_count])
                             print("S: {}, s:{}".format([S1,S2,S3],[s1,s2,s3]))
-                            rewards = Ss_policy(env, S, s)
+                            rewards, _ = Ss_policy(env, S, s)
                             total_reward = np.sum(rewards, axis = 0)
                             best_S[:, total_reward > max_reward] = S[:, total_reward > max_reward]
                             best_s[:, total_reward > max_reward] = s[:, total_reward > max_reward]
@@ -93,7 +93,7 @@ def Ss_oracle_independent(env_name):
     else:
         best_S, best_s = search_multilevel_interlevel_independent_Ss(env_train)
     env_test = make_env(env_name, wrapper_names=["OracleWrapper"], mode='test', vis_path=vis_path)
-    balance = Ss_policy(env_test, best_S, best_s)
+    _, balance = Ss_policy(env_test, best_S, best_s)
     env_test.render()
     print(vis_path, balance)
 
@@ -106,6 +106,6 @@ def Ss_static_independent(env_name):
     else:
         best_S, best_s = search_multilevel_interlevel_independent_Ss(env_train)
     env_test = make_env(env_name, wrapper_names=["OracleWrapper"], mode='test', vis_path=vis_path)
-    balance = Ss_policy(env_test, best_S, best_s)
+    _, balance = Ss_policy(env_test, best_S, best_s)
     env_test.render()
     print(vis_path, balance)
