@@ -12,7 +12,7 @@ env:
     - name: test
       start_date: 2021/9/1
       end_date: 2021/10/30
-  horizon: 200
+  horizon: 100
   lookback_len: 21
   integerization_sku: True
   warmup: replenish_by_last_demand
