@@ -16,7 +16,7 @@ env:
   lookback_len: 21
   integerization_sku: True
   warmup: replenish_by_last_demand
-  sku_list: ReplenishmentEnv/data/sku2778/sku500.sku_list.csv
+  sku_list: ReplenishmentEnv/data/sku2778/sku2000.sku_list.csv
 
 warehouse:
   - name: store3
