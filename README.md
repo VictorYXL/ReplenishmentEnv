@@ -46,7 +46,7 @@ print(info_states["balance"])
 
 - Download code
 ```
-git clone https://github.com/zhangchuheng123/ReplenishmentRL.git
+git clone https://github.com/VictorYXL/ReplenishmentEnv.git
 ```
 
 - Build the environment
