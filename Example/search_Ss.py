@@ -76,3 +76,14 @@ def Ss_static_independent(env_name):
     _, balance = Ss_policy(env_test, best_S, best_s)
     env_test.render()
     print(vis_path, balance)
+
+if __name__ == "__main__":
+    env_names = [
+        "sku200.single_store.noise_on_skewness",
+        # "sku200.single_store.lowest_capacity",
+    ]
+    for env_name in env_names:
+        # bsp_oracle(env_name)
+        # bsp_static(env_name)
+        Ss_static_independent(env_name)
+        # bsp_dynamic_21(env_name)

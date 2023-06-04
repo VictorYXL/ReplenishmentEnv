@@ -88,7 +88,7 @@ def get_multilevel_single_stock_level(
         assert prob.status == 'optimal', 'can\'t find optimal solution for SKU stock level'
     return stock_level.value
 
-def multilevel_base_stock(env: gym.Wrapper, update_freq =7, static_stock_levels = None):
+def multilevel_base_stock(env: gym.Wrapper, update_freq = 1, static_stock_levels = None):
     env.reset()
     current_step = 0
     is_done = False
@@ -96,6 +96,7 @@ def multilevel_base_stock(env: gym.Wrapper, update_freq =7, static_stock_levels 
     total_reward = np.zeros((env.warehouse_count, sku_count))
     stock_level_list = [[] for i in range(len(env.get_warehouse_list()))]
     while not is_done:
+        print(current_step)
         if current_step % update_freq == 0:
             if isinstance(static_stock_levels, np.ndarray):
                 stock_levels = static_stock_levels
@@ -153,10 +154,11 @@ def bsp_dynamic_21(env_name):
 
 if __name__ == "__main__":
     env_names = [
-        "sku200.single_store.lowest_capacity",
+        "sku200.single_store.distribution_shift",
+        # "sku200.single_store.lowest_capacity",
     ]
     for env_name in env_names:
-        bsp_oracle(env_name)
-        bsp_static(env_name)
+        # bsp_oracle(env_name)
+        # bsp_static(env_name)
         bsp_dynamic_history(env_name)
-        bsp_dynamic_21(env_name)
+        # bsp_dynamic_21(env_name)
