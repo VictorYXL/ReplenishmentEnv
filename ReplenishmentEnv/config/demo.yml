@@ -25,7 +25,7 @@ env:
 
 # * Warehouse info
 warehouse:
-  - name: store1              # * Warehouse name
+  - name: store3              # * Warehouse name
     initial_balance: 0        # * Init balance for warehouse. 
     capacity: 10000           # * Capacity for warehouse. 
     unit_storage_cost: 0.01   # * Unit storage cost per volume
@@ -39,31 +39,31 @@ warehouse:
         - name: procurement_cost
           file: ReplenishmentEnv/data/sku2778/sku2778.super_vendor.selling_price.csv
         - name: selling_price
-          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
+          file: ReplenishmentEnv/data/sku2778/sku2778.store3.selling_price.csv
       # Static info that are different between skus and will not changed every day.
       # All items are interpreted by a singl file with columns "SKU,item1,item2,..."
-      static_data: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
+      static_data: ReplenishmentEnv/data/sku2778/sku2778.store3.info.csv
       # Shared info that all skus has the same value for some feature and will not changed.
       shared_data:
         unit_order_cost: 10
         volume: 1
         basic_holding_cost: 0.0025
         backlog_ratio: 0.1
-        excess_ratio: 0.5
+        overflow_cost_ratio: 0.5
       # Necessary feature for skus include:
       # demand, selling_price, procurement_cost, init_stock, vlt, unit_order_cost, 
-      # volume, storage_cost, basic_holding_cost, backlog_ratio and excess_ratio 
+      # volume, storage_cost, basic_holding_cost, backlog_ratio and overflow_cost_ratio 
   - name: store2
     initial_balance: 0 
     capacity: 10000 
     unit_storage_cost: 0.01
     accept_sku: equal_accept
-    upstream: store1
+    upstream: store3
     downstream: consumer
     sku:
       dynamic_data:
         - name: procurement_cost
-          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
+          file: ReplenishmentEnv/data/sku2778/sku2778.store3.selling_price.csv
         - name: selling_price
           file: ReplenishmentEnv/data/sku2778/sku2778.store2.selling_price.csv
         - name: demand
@@ -75,7 +75,7 @@ warehouse:
         storage_cost: 0.0025
         basic_holding_cost: 0.00002
         backlog_ratio: 0.1
-        excess_ratio: 0.5
+        overflow_cost_ratio: 0.5
 
 # * profit setting. profit is internal in env.
 # Currently, reward1 and reward2 are supported.
@@ -114,4 +114,4 @@ visualization:
   time_flag: True
   state:                # visualization state items
     [demand, sale, arrived, replenish,
-    excess, accepted, in_stock, in_transit,]
+    excess, accepted, in_stock, in_transit]

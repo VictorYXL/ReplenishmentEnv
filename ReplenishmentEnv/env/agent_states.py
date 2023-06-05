@@ -94,7 +94,7 @@ class AgentStates(object):
             "in_stock",           # Stock amount in current step
             "replenish",          # Replenish amount in current step for each sku
             "excess",             # Excess amount for each sku after sales
-            "excess_ratio",       # Cost ratio due to excess
+            "overflow_cost_ratio",       # Cost ratio due to excess
             "in_transit",         # Sku amount in transit 
             "arrived",            # Arrived amount from upstream
             "accepted",           # Accepted amount
