@@ -49,10 +49,10 @@ warehouse:
         volume: 1
         basic_holding_cost: 0.0025
         backlog_ratio: 0.1
-        excess_ratio: 0.5
+        overflow_cost_ratio: 0.5
       # Necessary feature for skus include:
       # demand, selling_price, procurement_cost, init_stock, vlt, unit_order_cost, 
-      # volume, storage_cost, basic_holding_cost, backlog_ratio and excess_ratio 
+      # volume, storage_cost, basic_holding_cost, backlog_ratio and overflow_cost_ratio 
   - name: store2
     initial_balance: 0 
     capacity: 10000 
@@ -75,7 +75,7 @@ warehouse:
         storage_cost: 0.0025
         basic_holding_cost: 0.00002
         backlog_ratio: 0.1
-        excess_ratio: 0.5
+        overflow_cost_ratio: 0.5
 
 # * profit setting. profit is internal in env.
 # Currently, reward1 and reward2 are supported.

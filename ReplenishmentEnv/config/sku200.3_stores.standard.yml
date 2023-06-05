@@ -38,7 +38,7 @@ warehouse:
         volume: 1
         basic_holding_cost: 0.001
         backlog_ratio: 0.1
-        excess_ratio: 0.5
+        overflow_cost_ratio: 0.5
   - name: store2
     initial_balance: 0
     capacity: 20000
@@ -58,7 +58,7 @@ warehouse:
         volume: 1
         basic_holding_cost: 0.001
         backlog_ratio: 0.1
-        excess_ratio: 0.5
+        overflow_cost_ratio: 0.5
   - name: store1
     initial_balance: 0
     capacity: 20000
@@ -80,7 +80,7 @@ warehouse:
         volume: 1
         basic_holding_cost: 0.001
         backlog_ratio: 0.1
-        excess_ratio: 0.5
+        overflow_cost_ratio: 0.5
 
 profit_function: reward2
 
