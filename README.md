@@ -29,24 +29,21 @@ python setup.py install
 - Run example
 ```
 import random
-import os
 from ReplenishmentEnv import make_env
 
-env_name = "sku200.single_store.standard"
-vis_path = os.path.join("output", "random_action")
-env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
+env = make_env("sku58")
 env.reset()
 for i in range(10):
-    action_list = [[random.random() for i in range(200)]]
-    states, rewards, done, info_states = env.step(action_list) 
-print(info_states["balance"])
+    action_list = [int(random.random() * 10) for i in range(58)]
+    states, rewards, done, infos = env.step(action_list) 
+print(infos["balance"])
 ```
 
 ## Run example without installation
 
 - Download code
 ```
-git clone https://github.com/VictorYXL/ReplenishmentEnv.git
+git clone https://github.com/zhangchuheng123/ReplenishmentRL.git
 ```
 
 - Build the environment

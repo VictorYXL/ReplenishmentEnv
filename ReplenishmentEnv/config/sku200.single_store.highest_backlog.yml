@@ -1,0 +1,62 @@
+# Normal sku 200 task with common setting.
+# All skus are selected from sku2307 with minimum fluctuation demand.
+env:
+  mode:
+    - name: train
+      start_date: 2018/8/1
+      end_date: 2021/6/30
+      random_interception: True
+    - name: validation
+      start_date: 2021/7/1
+      end_date: 2021/8/31 
+    - name: test
+      start_date: 2021/9/1
+      end_date: 2021/10/30
+  horizon: 100
+  lookback_len: 21
+  integerization_sku: True
+  warmup: replenish_by_last_demand
+  sku_list: ReplenishmentEnv/data/sku2778/sku200.sku_list.csv
+
+warehouse:
+  - name: store1
+    initial_balance: 0
+    capacity: 20000
+    unit_storage_cost: 0.002
+    accept_sku: equal_accept
+    upstream: super_vendor
+    downstream: consumer
+    sku:
+      dynamic_data:
+        - name: procurement_cost
+          file: ReplenishmentEnv/data/sku2778/sku2778.store2.selling_price.csv
+        - name: selling_price
+          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
+        - name: demand
+          file: ReplenishmentEnv/data/sku2778/sku2778.demand.csv
+      static_data: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
+      shared_data:
+        unit_order_cost: 10
+        volume: 1
+        basic_holding_cost: 0.001
+        backlog_ratio: 1.0
+        overflow_cost_ratio: 0.5
+
+profit_function: reward2
+
+reward_function: reward2
+
+action:
+  mode: demand_mean_continuous
+
+output_state:
+  current_state:
+    [selling_price, procurement_cost, vlt, volume, 
+    unit_order_cost, replenish, excess, in_stock, in_transit]
+  lookback_state:
+    [demand]
+
+visualization:
+  state: 
+    [demand, sale, arrived, replenish,
+    excess, accepted, in_stock, in_transit]
