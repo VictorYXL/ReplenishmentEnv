@@ -19,7 +19,7 @@ env:
   sku_list: ReplenishmentEnv/data/sku2778/sku100.sku_list.csv
 
 warehouse:
-  - name: store3
+  - name: store1
     initial_balance: 0
     capacity: 10000
     unit_storage_cost: 0.002
@@ -31,10 +31,10 @@ warehouse:
         - name: procurement_cost
           file: ReplenishmentEnv/data/sku2778/sku2778.store2.selling_price.csv
         - name: selling_price
-          file: ReplenishmentEnv/data/sku2778/sku2778.store3.selling_price.csv
+          file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
         - name: demand
           file: ReplenishmentEnv/data/sku2778/sku2778.demand.csv
-      static_data: ReplenishmentEnv/data/sku2778/sku2778.store3.info.csv
+      static_data: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
       shared_data:
         unit_order_cost: 10
         volume: 1
@@ -59,4 +59,4 @@ output_state:
 visualization:
   state: 
     [demand, sale, arrived, replenish,
-    excess, accepted, in_stock, in_transit,]
+    excess, accepted, in_stock, in_transit]
