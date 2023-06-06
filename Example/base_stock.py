@@ -112,51 +112,19 @@ def multilevel_base_stock(env: gym.Wrapper, update_freq =7, static_stock_levels 
 
     return info["balance"]
 
-
-def bsp_oracle(env_name):
-    exp_name = "bsp_oracle"
-    vis_path = os.path.join("output", env_name, exp_name)
-    env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
-    env_train.reset()
-    static_stock_levels = get_multilevel_stock_level(env_train)
-    env_test = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
-    balance = multilevel_base_stock(env_test, static_stock_levels = static_stock_levels)
-    env_test.render()
-    print(env_name, exp_name, balance)
-
-def bsp_static(env_name):
-    exp_name = "bsp_static"
-    vis_path = os.path.join("output", env_name, exp_name)
+def BS_static(env_name, vis_path):
+    exp_name = "BS_static"
     env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode="train", vis_path=vis_path)
     env_train.reset()
     static_stock_levels = get_multilevel_stock_level(env_train)
     env_test = make_env(env_name, wrapper_names=["OracleWrapper"], mode="test", vis_path=vis_path)
     balance = multilevel_base_stock(env_test, static_stock_levels = static_stock_levels)
     env_test.render()
-    print(env_name, exp_name, balance)
+    return balance
 
-def bsp_dynamic_history(env_name):
-    exp_name = "bsp_dynamic_history"
-    vis_path = os.path.join("output", env_name, exp_name)
+def BS_dynamic(env_name, vis_path):
+    exp_name = "BS_dynamic"
     env = make_env(env_name, wrapper_names=["HistoryWrapper"], mode="test", vis_path=vis_path)
     balance = multilevel_base_stock(env)
     env.render()
-    print(env_name, exp_name, balance)
-
-def bsp_dynamic_21(env_name):
-    exp_name = "bsp_dynamic_21"
-    vis_path = os.path.join("output", env_name, exp_name)
-    env = make_env(env_name, wrapper_names=["DynamicWrapper"], mode="test", vis_path=vis_path)
-    balance = multilevel_base_stock(env)
-    env.render()
-    print(env_name, exp_name, balance)
-
-if __name__ == "__main__":
-    env_names = [
-        "sku200.single_store.lowest_capacity",
-    ]
-    for env_name in env_names:
-        bsp_oracle(env_name)
-        bsp_static(env_name)
-        bsp_dynamic_history(env_name)
-        bsp_dynamic_21(env_name)
+    return balance

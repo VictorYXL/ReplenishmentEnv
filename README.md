@@ -14,29 +14,32 @@ Replenishment environment for OR and RL algorithms
 | [ReplenishmentEnv\wrapper](ReplenishmentEnv\wrapper)      | Wrapper for env(Not implement yet)c                 |
 | [Example](Example)                        | Show case of replenishment env.                                     |
 
-## Install from Source
+## Run OR algorithm
+```
+import os
+from Example.base_stock import BS_static, BS_dynamic
+from Example.search_sS import sS_static, sS_hindsight
+env_name = "sku200.single_store.standard"
 
-- Download code
-```
-git clone https://github.com/zhangchuheng123/ReplenishmentRL.git
-```
+# Base stock static mode
+vis_path = os.path.join("output", env_name, "BS_static")
+BS_static_sum_balance = sum(BS_static(env_name, vis_path))
+print(env_name, "BS_static", BS_static_sum_balance)
 
-- Build and install 
-```
-python setup.py install
-```
+# Base stock dynamic mode
+vis_path = os.path.join("output", env_name, "BS_dynamic")
+BS_static_sum_balance = sum(BS_dynamic(env_name, vis_path))
+print(env_name, "BS_dynamic", BS_static_sum_balance)
 
-- Run example
-```
-import random
-from ReplenishmentEnv import make_env
+# (s, S) static mode
+vis_path = os.path.join("output", env_name, "sS_static")
+sS_static_sum_balance = sum(sS_static(env_name, vis_path))
+print(env_name, "BS_static", sS_static_sum_balance)
 
-env = make_env("sku58")
-env.reset()
-for i in range(10):
-    action_list = [int(random.random() * 10) for i in range(58)]
-    states, rewards, done, infos = env.step(action_list) 
-print(infos["balance"])
+# (s, S) hindsight mode
+vis_path = os.path.join("output", env_name, "sS_hindsight")
+sS_hindsight_sum_balance = sum(sS_hindsight(env_name, vis_path))
+print(env_name, "sS_hindsight", sS_hindsight_sum_balance)
 ```
 
 ## Run example without installation

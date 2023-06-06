@@ -33,7 +33,7 @@ warehouse:
         - name: selling_price
           file: ReplenishmentEnv/data/sku2778/sku2778.store1.selling_price.csv
         - name: demand
-          file: ReplenishmentEnv/data/sku2778/sku2778.demand.distribution_shift_2_.csv
+          file: ReplenishmentEnv/data/sku2778/sku2778.demand.add_noise_2.csv
       static_data: ReplenishmentEnv/data/sku2778/sku2778.store1.info.csv
       shared_data:
         unit_order_cost: 10
