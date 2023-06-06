@@ -29,8 +29,8 @@ warehouse:
     initial_balance: 0        # * Init balance for warehouse. 
     capacity: 10000           # * Capacity for warehouse. 
     unit_storage_cost: 0.01   # * Unit storage cost per volume
-    accept_sku: equal_accept         # Aeecpt sku funtion when excess the capacity limitaion. Default is equal_accept.
-    upstream: super_vendor    # * Upstream for warehouse. Super_vendor can provide unlimited skus.
+    accept_sku: equal_accept  # Accept sku function when excess the capacity limitation. Default is equal_accept.
+    upstream: super_vendor    # * Upstream for warehouse. Super_vendor can provide unlimited SKUs.
     downstream: store2        # * Downstream for warehouse. Consumers represents the actual demand.
     sku:
       # Dynamic info that will changed every day. 

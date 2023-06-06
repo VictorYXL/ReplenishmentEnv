@@ -113,7 +113,9 @@ def multilevel_base_stock(env: gym.Wrapper, update_freq =7, static_stock_levels 
     return info["balance"]
 
 def BS_static(env_name, vis_path):
-    exp_name = "BS_static"
+    '''Base stock algorithm static mode.
+    The random_interception in config file will add an element of randomness.
+    '''
     env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode="train", vis_path=vis_path)
     env_train.reset()
     static_stock_levels = get_multilevel_stock_level(env_train)
@@ -123,7 +125,7 @@ def BS_static(env_name, vis_path):
     return balance
 
 def BS_dynamic(env_name, vis_path):
-    exp_name = "BS_dynamic"
+    """Base stock algorithm dynamic mode."""
     env = make_env(env_name, wrapper_names=["HistoryWrapper"], mode="test", vis_path=vis_path)
     balance = multilevel_base_stock(env)
     env.render()

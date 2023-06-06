@@ -39,6 +39,7 @@ def search_sS(env, search_range=np.arange(0.0, 12.1, 1)):
     return np.ones((env.warehouse_count, sku_count)) * best_S, np.ones((env.warehouse_count, sku_count)) * best_s
 
 def sS_hindsight(env_name, vis_path):
+    """(s, S) algorithm hindsight mode."""
     env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode='test')
     best_S, best_s = search_sS(env_train)
     env_test = make_env(env_name, wrapper_names=["OracleWrapper"], mode='test', vis_path=vis_path)
@@ -47,6 +48,9 @@ def sS_hindsight(env_name, vis_path):
     return balance
 
 def sS_static(env_name, vis_path):
+    """(s, S) algorithm static mode.
+    The random_interception in config file will add an element of randomness.
+    """
     exp_name = "sS_static"
     vis_path = os.path.join("output", env_name, exp_name)
     env_train = make_env(env_name, wrapper_names=["OracleWrapper"], mode='train')
