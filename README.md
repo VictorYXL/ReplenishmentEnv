@@ -73,14 +73,14 @@ Visualization policy will be in output folder.
 ## Run MARL algorithm
 The MARL training only tested in Linux. The training curve are available in wandb.
 * IPPO training
-    * Specify the environment by modify the task_type field in [envs](Baseline\MARL_algorithm\config\envs\replenishment.yaml)
-    * Specify hyper parameter if needed in algorithm file, such as [envs](Baseline\MARL_algorithm\config\algo\ippo.yaml)
+    * Specify the environment by modify the task_type field in [replenishment.yaml](Baseline\MARL_algorithm\config\envs\replenishment.yaml)
+    * Specify hyper parameter if needed in algorithm file, such as [ippo.yaml](Baseline\MARL_algorithm\config\algo\ippo.yaml)
     * Run ```python main.py --config=ippo --env-config=replenishment```
     * Get training curve in wandb
     * If need visualization policy, set the ```visualize:True``` om algorithm file
 * QTRAN training
-    * Specify the environment by modify the task_type field in [envs](Baseline\MARL_algorithm\config\envs\replenishment.yaml)
-    * Specify hyper parameter if needed in algorithm file, such as [envs](Baseline\MARL_algorithm\config\algo\ippo.yaml)
+    * Specify the environment by modify the task_type field in [replenishment.yaml](Baseline\MARL_algorithm\config\envs\replenishment.yaml)
+    * Specify hyper parameter if needed in algorithm file, such as [qtran.yaml](Baseline\MARL_algorithm\config\algo\qtran.yaml)
     * Run ```python main.py --config=qtran --env-config=replenishment```
     * Get training curve in wandb
     * If need visualization policy, set the ```visualize:True``` om algorithm file
