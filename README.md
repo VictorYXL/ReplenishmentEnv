@@ -1,4 +1,5 @@
-# ReplenishmentRL
+# MABIM
+MABIM: Multi-Agent Benchmark for Inventory Management. 
 Replenishment environment for OR and RL algorithms
 
 
