@@ -14,14 +14,37 @@ Replenishment environment for OR and RL algorithms
 | [ReplenishmentEnv\wrapper](ReplenishmentEnv\wrapper)      | Wrapper for env                 |
 | [Baseline](Baseline)                        | Show case of replenishment env.                                     |
 
+## Preparation
+
+### install MABIM 
+* Create new virtual environment (Optional)
+python -m venv myenv
+In Windows 
+```
+myenv\Scripts\activate
+```
+In macOS and Linux:
+```
+source myenv/bin/activate
+```
+* Install dependence
+pip install -r requirements.txt
+
+### Build and install MABIM
+```
+python setup.py install
+```
+
 ## Demo to build a environment
-Write config as [demo.yaml](ReplenishmentEnv\config\demo.yml)
+* Prepare the data including SKU data and warehouse information.
+
+* Write config into [config](ReplenishmentEnv\config) with demo [demo.yaml](ReplenishmentEnv\config\demo.yml)
 
 ## Run OR algorithm
 ```
 import os
-from Baseline.base_stock import BS_static, BS_dynamic
-from Baseline.search_sS import sS_static, sS_hindsight
+from Baseline.OR_algorithm.base_stock import BS_static, BS_dynamic
+from Baseline.OR_algorithm.search_sS import sS_static, sS_hindsight
 env_name = "sku200.single_store.standard"
 
 # Base stock static mode
@@ -44,34 +67,19 @@ vis_path = os.path.join("output", env_name, "sS_hindsight")
 sS_hindsight_sum_balance = sum(sS_hindsight(env_name, vis_path))
 print(env_name, "sS_hindsight", sS_hindsight_sum_balance)
 ```
-Visualization will be in output folder.
+Visualization policy will be in output folder.
 
-## Run example without installation
-
-- Download code
-```
-git clone https://github.com/zhangchuheng123/ReplenishmentRL.git
-```
-
-- Build the environment
-
-    Only python >= 3.8.0 is tested.
-    - Build by conda
-    ```
-    conda create -n ReplenishmentEnv python=3.8.0 -f requirements.txt
-    ```
-    - Build by pip
-    ```
-    pip install -r requirements.txt
-    ```
-
-- Run example
-```
-    python Example\random_actions.py
-```
-
-## Build new env(Not Implement Yes)
-- Prepare the data including sku_list, info and dynamic data.
-- Prepare the env config following the instruction in Demo.yml
-- Prepare the special or current wrapper
-- Register in [ReplenishmentEnv\\__init__.py](ReplenishmentEnv\\__init__.py) file
+## Run MARL algorithm
+The MARL training only tested in Linux. The training curve are available in wandb.
+* IPPO training
+    * Specify the environment by modify the task_type field in [envs](Baseline\MARL_algorithm\config\envs\replenishment.yaml)
+    * Specify hyper parameter if needed in algorithm file, such as [envs](Baseline\MARL_algorithm\config\algo\ippo.yaml)
+    * Run ```python main.py --config=ippo --env-config=replenishment```
+    * Get training curve in wandb
+    * If need visualization policy, set the ```visualize:True``` om algorithm file
+* QTRAN training
+    * Specify the environment by modify the task_type field in [envs](Baseline\MARL_algorithm\config\envs\replenishment.yaml)
+    * Specify hyper parameter if needed in algorithm file, such as [envs](Baseline\MARL_algorithm\config\algo\ippo.yaml)
+    * Run ```python main.py --config=qtran --env-config=replenishment```
+    * Get training curve in wandb
+    * If need visualization policy, set the ```visualize:True``` om algorithm file
