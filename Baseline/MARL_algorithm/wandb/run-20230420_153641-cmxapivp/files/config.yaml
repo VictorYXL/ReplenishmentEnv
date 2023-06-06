@@ -1,0 +1,255 @@
+wandb_version: 1
+
+env:
+  desc: null
+  value: replenishment
+env_args:
+  desc: null
+  value:
+    key: replenishment_efficient_env-v0
+    map_name: n100c10000d21s*l100
+    n_agents: 100
+    task_type: Standard
+    mode: train
+    time_limit: 100
+    reward: lambda
+    seed: 101
+env-config:
+  desc: null
+  value: replenishment_sku100_Standard
+test_greedy:
+  desc: null
+  value: true
+test_nepisode:
+  desc: null
+  value: 10
+test_interval:
+  desc: null
+  value: 50000
+log_interval:
+  desc: null
+  value: 10000
+visualize:
+  desc: null
+  value: false
+visualize_interval:
+  desc: null
+  value: 5000
+learner_log_interval:
+  desc: null
+  value: 10000
+save_model:
+  desc: null
+  value: true
+save_model_interval:
+  desc: null
+  value: 1460000
+checkpoint_path:
+  desc: null
+  value: ''
+evaluate:
+  desc: null
+  value: false
+save_replay:
+  desc: null
+  value: false
+local_results_path:
+  desc: null
+  value: results
+use_wandb:
+  desc: null
+  value: true
+wandb_project_name:
+  desc: null
+  value: whittle_index
+use_tensorboard:
+  desc: null
+  value: false
+runner:
+  desc: null
+  value: parallel
+batch_size:
+  desc: null
+  value: 8
+batch_size_run:
+  desc: null
+  value: 8
+buffer_size:
+  desc: null
+  value: 8
+buffer_cpu_only:
+  desc: null
+  value: true
+name:
+  desc: null
+  value: ippo_ir
+run:
+  desc: null
+  value: ippo_run
+use_cuda:
+  desc: null
+  value: true
+seed:
+  desc: null
+  value: 101
+t_max:
+  desc: null
+  value: 5020000
+action_selector:
+  desc: null
+  value: multinomial
+epsilon_start:
+  desc: null
+  value: 1.0
+epsilon_finish:
+  desc: null
+  value: 0.05
+epsilon_anneal_time:
+  desc: null
+  value: 50000
+save_probs:
+  desc: null
+  value: true
+mask_before_softmax:
+  desc: null
+  value: true
+learner:
+  desc: null
+  value: local_ppo_learner
+use_double_q:
+  desc: null
+  value: true
+target_update_interval:
+  desc: null
+  value: 200
+critic_type:
+  desc: null
+  value: mappo_rnn_critic_share
+critic_input_seq_str:
+  desc: null
+  value: o
+mac:
+  desc: null
+  value: mappo_mac
+agent:
+  desc: null
+  value: n_rnn
+use_layer_norm:
+  desc: null
+  value: true
+use_orthogonal:
+  desc: null
+  value: true
+agent_output_type:
+  desc: null
+  value: pi_logits
+actor_input_seq_str:
+  desc: null
+  value: o_la
+obs_last_action:
+  desc: null
+  value: true
+obs_agent_id:
+  desc: null
+  value: false
+hidden_dim:
+  desc: null
+  value: 128
+whittle_hidden_dim:
+  desc: null
+  value: 128
+gamma:
+  desc: null
+  value: 0.985
+optim:
+  desc: null
+  value: Adam
+lr:
+  desc: null
+  value: 0.0005
+optim_alpha:
+  desc: null
+  value: 0.99
+optim_eps:
+  desc: null
+  value: 1.0e-05
+grad_norm_clip:
+  desc: null
+  value: 10
+critic_coef:
+  desc: null
+  value: 0.5
+entropy_coef:
+  desc: null
+  value: 0
+reg_coef:
+  desc: null
+  value: 0.01
+gae_lambda:
+  desc: null
+  value: 0.95
+mini_epochs:
+  desc: null
+  value: 4
+eps_clip:
+  desc: null
+  value: 0.2
+gain:
+  desc: null
+  value: 0.01
+use_n_lambda:
+  desc: null
+  value: false
+n_lambda:
+  desc: null
+  value: 51
+use_individual_rewards:
+  desc: null
+  value: true
+use_mean_team_reward:
+  desc: null
+  value: true
+use_reward_normalization:
+  desc: null
+  value: true
+use_loss_normalization:
+  desc: null
+  value: false
+use_single_lambda_sampling:
+  desc: null
+  value: false
+sampling_lambda_index:
+  desc: null
+  value: 0
+use_sample_prob_weights:
+  desc: null
+  value: true
+config:
+  desc: null
+  value: exp18_ippo_ir
+_wandb:
+  desc: null
+  value:
+    python_version: 3.8.16
+    cli_version: 0.15.0
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1682005001.950257
+    t:
+      1:
+      - 1
+      - 52
+      - 55
+      2:
+      - 1
+      - 52
+      - 55
+      3:
+      - 13
+      - 16
+      - 23
+      4: 3.8.16
+      5: 0.15.0
+      8:
+      - 5

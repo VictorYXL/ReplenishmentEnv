@@ -1,0 +1,168 @@
+{
+    "os": "Linux-5.15.0-1034-azure-x86_64-with-glibc2.17",
+    "python": "3.8.16",
+    "heartbeatAt": "2023-04-20T15:36:42.625656",
+    "startedAt": "2023-04-20T15:36:41.944915",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--config=exp18_ippo_ir",
+        "--env-config=replenishment_sku100_Standard"
+    ],
+    "state": "running",
+    "program": "main.py",
+    "codePath": "code/exp18/main.py",
+    "git": {
+        "remote": "https://github.com/zhangchuheng123/ReplenishmentAlgo.git",
+        "commit": "1667788287f73e0707f7d936310509ebaafbee31"
+    },
+    "email": "liuzhihao2022@ia.ac.cn",
+    "root": "/home/v-zhihaoliu/Desktop/Replenishment/ReplenishmentAlgo2/ReplenishmentAlgo",
+    "host": "GCRAZGDL1223",
+    "username": "FAREAST.v-zhihaoliu",
+    "executable": "/anaconda/envs/py38/bin/python",
+    "cpu_count": 24,
+    "cpu_count_logical": 24,
+    "cpu_freq": {
+        "current": 2544.229791666667,
+        "min": 0.0,
+        "max": 0.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3093.978,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2801.807,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2445.432,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3093.803,
+            "min": 0.0,
+            "max": 0.0
+        }
+    ],
+    "disk": {
+        "total": 992.2479553222656,
+        "used": 121.20804977416992
+    },
+    "gpu": "NVIDIA A100 80GB PCIe",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA A100 80GB PCIe",
+            "memory_total": 84929216512
+        }
+    ],
+    "memory": {
+        "total": 216.27160263061523
+    }
+}
