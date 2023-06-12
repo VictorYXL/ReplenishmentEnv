@@ -13,10 +13,11 @@ import wandb
 from components.episode_buffer import EpisodeBatch
 from envs import REGISTRY as env_REGISTRY
 from utils.timehelper import TimeStat
-sys.path.append(os.path.join(os.getcwd(), 'env/ReplenishmentEnv/OR_algorithm'))
-sys.path.append("../..")
-sys.path.append("../../env/ReplenishmentEnv/OR_algorithm/base_stock")
-from ReplenishmentEnv.Baseline.OR_algorithm.base_stock import *
+# sys.path.append(os.path.join(os.getcwd(), 'env/ReplenishmentEnv/OR_algorithm'))
+# sys.path.append("../..")
+# sys.path.append("../../env/ReplenishmentEnv/OR_algorithm/base_stock")
+from Baseline.OR_algorithm.base_stock import *
+# from ReplenishmentEnv.Baseline.OR_algorithm.base_stock import *
 #from env.ReplenishmentEnv.Example.multilevel_base_stock import *
 # Based (very) heavily on SubprocVecEnv from OpenAI Baselines
 # https://github.com/openai/baselines/blob/master/baselines/common/vec_env/subproc_vec_env.py
@@ -49,6 +50,7 @@ class ParallelRunnerWithBasestock:
         self.parent_conns[0].send(("get_env_info", None))
         self.env_info = self.parent_conns[0].recv()
         self.episode_limit = self.env_info["episode_limit"]
+        self.n_warehouses = self.env_info["n_warehouses"]
         self.t = 0
 
         self.t_env = 0
@@ -114,8 +116,6 @@ class ParallelRunnerWithBasestock:
         # Get the obs, state and avail_actions back
         for parent_conn in self.parent_conns:
             data = parent_conn.recv()
-            # TODO:一切含有obs的地方都记得，要取第一个agent的
-            #data["obs"] = data[]
             pre_transition_data["state"].append(data["state"])
             pre_transition_data["avail_actions"].append(data["avail_actions"])
             pre_transition_data["obs"].append(data["obs"])
@@ -160,25 +160,15 @@ class ParallelRunnerWithBasestock:
             []
         )  # may store extra stats like battle won. this is filled in ORDER OF TERMINATION
 
-        if test_mode:
-            lbda_indices = np.array([lbda_index] * self.batch_size)
-        elif self.args.use_single_lambda_sampling:
-            lbda_indices = np.array([self.args.sampling_lambda_index] * self.batch_size)
-        else:
-            lbda_indices = np.random.choice(self.args.n_lambda, size=self.batch_size)
-        # lbda_indices = torch.tensor(lbda_indices, dtype=torch.long, device=self.args.device)
-
         save_probs = getattr(self.args, "save_probs", False)
 
         while True:
-            # TODO:需要更改网络，调整网络怎么从batch中取参数，然后赋值
-            if self.args.mac == "mappo_mac" or self.args.mac == "mappo_mac_with_base_stock":
+            if self.args.mac == "mappo_mac":
                 mac_output = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, 
                     bs=envs_not_terminated, test_mode=test_mode)
             elif self.args.mac == "dqn_mac" or self.args.mac == "ldqn_mac":
                 mac_output = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, 
                     lbda_indices=None, bs=envs_not_terminated, test_mode=test_mode)
-            # TODO:这里插入base stock的action，然后把两个action拼接起来
             if save_probs:
                 actions, probs = mac_output
             else:
@@ -205,7 +195,6 @@ class ParallelRunnerWithBasestock:
                     if not terminated[
                         idx
                     ]:  # Only send the actions to the env if it hasn't terminated
-                        # TODO:是在这里发送的action。那么将这里的action更改为ippo和base stock结合的就好了
                         parent_conn.send(("step_with_base_stock", (cpu_actions[action_idx], self.set_stock_levels)))
                     action_idx += 1  # actions is not a list over every env
 
@@ -245,7 +234,7 @@ class ParallelRunnerWithBasestock:
                     post_transition_data["cur_balance"].append(
                         data["info"]["cur_balance"]
                     )
-                    # 直接将reward作为奖励。那么最终画图出来的return_old和base_stock相同，base_stock也是用reward来计算的balance
+                    
                     episode_returns[idx] += data["reward"]
 
                     if self.args.n_agents > 1:
@@ -319,7 +308,6 @@ class ParallelRunnerWithBasestock:
             env_stats.append(env_stat)
 
         cur_stats = self.test_stats if test_mode else self.train_stats
-        # 每次重新运行环境时,self.test_returns会被置为一个空list。里面将要存每一个线程每一个智能体的balance
         cur_returns = self.test_returns if test_mode else self.train_returns
         cur_profits = self.test_profits if test_mode else self.train_profits
 
@@ -348,7 +336,7 @@ class ParallelRunnerWithBasestock:
         mean_in_stock_seq = [d['mean_in_stock_sum'] for d in final_env_infos]
         cur_stats['mean_in_stock_sum'] = np.mean(mean_in_stock_seq)
 
-        for i in range(3):
+        for i in range(self.n_warehouses):
             mean_in_stock_store_seq = [d['mean_in_stock_sum_store_'+str(i+1)] for d in final_env_infos]
             mean_excess_store_seq = [d['mean_excess_sum_store_'+str(i+1)] for d in final_env_infos]
             mean_backlog_store_seq = [d['mean_backlog_sum_store_'+str(i+1)] for d in final_env_infos]
@@ -361,7 +349,6 @@ class ParallelRunnerWithBasestock:
         n_test_runs = (
             max(1, self.args.test_nepisode // self.batch_size) * self.batch_size
         )
-        # 如果是测试模式，就返回这个结果，用于画图
         cur_profits = np.array(cur_profits)
         if test_mode:
             cur_returns = np.array(cur_returns)
@@ -370,7 +357,6 @@ class ParallelRunnerWithBasestock:
             profits = (cur_profits.mean(axis=0)).sum(axis=-1)
 
             return cur_stats, lambda_return, profits
-        # 增加一些中间数据，对训练模式也要打印
         else:
             cur_returns = np.array(cur_returns)
             mean_returns = cur_returns.mean(axis=0)
@@ -478,15 +464,25 @@ def env_worker(remote, env_fn):
     env = env_fn.x()
     while True:
         cmd, data = remote.recv()
-        if cmd == "step":
-            actions = data
+        if cmd == "step_with_base_stock":
+            action_from_rl, stock_levels = data
+            replenish = stock_levels - env._env.get_in_stock() - env._env.get_in_transit()
+            replenish = np.where(replenish >= 0, replenish, 0) / (env._env.get_demand_mean() + 0.00001)
+
+            discrete_action = env._env.config['action']['space']
+            actions = np.array([[np.argmin(np.abs(np.array(discrete_action) - a)) for a in row]  
+                for row in replenish])
+            # RL algorithm with BSs. Top layer uses RL algorithm and others use BSs.
+            actions[0] = action_from_rl
+            actions = actions.flatten()
             # Take a step in the environment
             reward, terminated, env_info = env.step(actions)
+            env_info['cur_balance'] = env_info['cur_balance'].reshape(env.n_warehouses, -1).sum(axis = 0)
+            env_info['individual_rewards'] = env_info['individual_rewards'].reshape(env.n_warehouses, -1).sum(axis = 0)
             # Return the observations, avail_actions and state to make the next action
-            state = env.get_state()
-            avail_actions = env.get_avail_actions()
-            obs = env.get_obs()
-            # TODO:这里的obs是不是也要改
+            state = env.get_state()[:int(env.get_state_size()/env.n_warehouses)]
+            avail_actions = env.get_avail_actions()[:int(len(env.get_avail_actions())/env.n_warehouses)]
+            obs = env.get_obs()[:int(len(env.get_obs())/env.n_warehouses)]
             remote.send(
                 {
                     # Data for the next timestep needed to pick an action
@@ -503,11 +499,9 @@ def env_worker(remote, env_fn):
             env.reset()
             remote.send(
                 {
-                    #"state": env.get_state(),
-                    "state": env.get_state()[:int(env.get_state_size()/3)],
-                    "avail_actions": env.get_avail_actions()[:int(len(env.get_avail_actions())/3)],
-                    # "obs": env.get_obs()[:(len(env.get_obs())/3)],
-                    "obs": env.get_obs()[:int(len(env.get_obs())/3)]
+                    "state": env.get_state()[:int(env.get_state_size()/env.n_warehouses)],
+                    "avail_actions": env.get_avail_actions()[:int(len(env.get_avail_actions())/env.n_warehouses)],
+                    "obs": env.get_obs()[:int(len(env.get_obs())/env.n_warehouses)]
                 }
             )
         elif cmd == "close":
@@ -522,7 +516,7 @@ def env_worker(remote, env_fn):
             mode = data
             env.switch_mode(mode)
         elif cmd == "get_profit":
-            remote.send(env.get_profit().reshape(3, -1).sum(axis = 0))
+            remote.send(env.get_profit().reshape(env.n_warehouses, -1).sum(axis = 0))
         elif cmd == "get_reward_dict":
             remote.send(env._env.reward_monitor)
         elif cmd == "visualize_render":
@@ -534,51 +528,9 @@ def env_worker(remote, env_fn):
             remote.send(env._env.storage_capacity)
         elif cmd == "set_storage_capacity":
             env.set_storage_capacity(data)
-            # env._env.storage_capacity = storage_capacity
         elif cmd == "get_stock_levels":
             stock_levels = get_multilevel_stock_level(env._env)
             remote.send(stock_levels)
-        elif cmd == "step_with_base_stock":
-            # TODO:暂时取用multi-level规划出来的三层，但是只取两层的一个结果
-            # 这个env不是那个env吧？是不是要取env._env?
-            # stock_levels = get_multilevel_stock_level(env._env)
-            action_from_rl, stock_levels = data
-            # if env.env_t % 7 == 0:
-            #     stock_levels = get_two_level_multilevel_stock_level(env._env)
-            replenish = stock_levels - env._env.get_in_stock() - env._env.get_in_transit()
-            replenish = np.where(replenish >= 0, replenish, 0) / (env._env.get_demand_mean() + 0.00001)
-
-            discrete_action = env._env.config['action']['space']
-            actions = np.array([[np.argmin(np.abs(np.array(discrete_action) - a)) for a in row]  
-                for row in replenish])
-            # actions = np.concatenate([data.reshape(1,-1), actions])
-            actions[0] = action_from_rl
-            actions = actions.flatten()
-            #actions = np.concatenate(data[])
-            # Take a step in the environment
-            # TODO: info里面的cur_balance和individual_reward也应该拆成3份，然后按列加起来
-            reward, terminated, env_info = env.step(actions)
-            env_info['cur_balance'] = env_info['cur_balance'].reshape(3, -1).sum(axis = 0)
-            env_info['individual_rewards'] = env_info['individual_rewards'].reshape(3, -1).sum(axis = 0)
-            # Return the observations, avail_actions and state to make the next action
-            # state = env.get_state()
-            state = env.get_state()[:int(env.get_state_size()/3)]
-            avail_actions = env.get_avail_actions()[:int(len(env.get_avail_actions())/3)]
-            #obs = env.get_obs()
-            obs = env.get_obs()[:int(len(env.get_obs())/3)]
-            # TODO:这里的obs是不是也要改
-            remote.send(
-                {
-                    # Data for the next timestep needed to pick an action
-                    "state": state,
-                    "avail_actions": avail_actions,
-                    "obs": obs,
-                    # Rest of the data for the current timestep
-                    "reward": reward,
-                    "terminated": terminated,
-                    "info": env_info,
-                }
-            )
         else:
             raise NotImplementedError
 

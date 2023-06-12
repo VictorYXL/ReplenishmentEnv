@@ -134,21 +134,6 @@ class QLearner:
         if (episode_num - self.last_target_update_episode) / self.args.target_update_interval >= 1.0:
             self._update_targets()
             self.last_target_update_episode = episode_num
-
-        # if t_env - self.log_stats_t >= self.args.learner_log_interval:
-        #     self.logger.log_stat("loss", loss.item(), t_env)
-        #     self.logger.log_stat("td_loss", td_loss.item(), t_env)
-        #     self.logger.log_stat("opt_loss", opt_loss.item(), t_env)
-        #     self.logger.log_stat("nopt_loss", nopt_loss.item(), t_env)
-        #     self.logger.log_stat("grad_norm", grad_norm, t_env)
-        #     if self.args.mixer == "qtran_base":
-        #         mask_elems = mask.sum().item()
-        #         self.logger.log_stat("td_error_abs", (masked_td_error.abs().sum().item()/mask_elems), t_env)
-        #         self.logger.log_stat("td_targets", ((masked_td_error).sum().item()/mask_elems), t_env)
-        #         self.logger.log_stat("td_chosen_qs", (joint_qs.sum().item()/mask_elems), t_env)
-        #         self.logger.log_stat("v_mean", (vs.sum().item()/mask_elems), t_env)
-        #         self.logger.log_stat("agent_indiv_qs", ((chosen_action_qvals * mask).sum().item()/(mask_elems * self.args.n_agents)), t_env)
-        #     self.log_stats_t = t_env
         mask_elems = mask.sum().item()
         wandb.log({
             "loss": loss.item(),

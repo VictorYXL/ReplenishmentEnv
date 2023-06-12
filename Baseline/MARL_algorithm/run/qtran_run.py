@@ -86,7 +86,6 @@ def run_sequential(args, logger):
     runner = r_REGISTRY[args.runner](args=args, logger=logger)
 
     # Set up schemes and groups here
-    val_best_return = -np.inf
     env_info = runner.get_env_info()
     args.n_agents = env_info["n_agents"]
     args.n_actions = env_info["n_actions"]
@@ -184,9 +183,7 @@ def run_sequential(args, logger):
     last_log_T = 0
     model_save_time = 0
     visual_time = 0
-    max_avg_balance = -1
-    test_max_avg_balance = -1
-    max_model_path = None
+    val_best_return = -np.inf
 
     start_time = time.time()
     last_time = start_time
@@ -209,14 +206,6 @@ def run_sequential(args, logger):
                 'train_max_instock_sum': train_stats['max_in_stock_sum'],
                 'train_mean_in_stock_sum': train_stats['mean_in_stock_sum']
             })
-            # for i in range(3):
-            #     wandb_dict.update({
-            #     'train_mean_excess_sum_store_'+str(i+1): train_stats['mean_excess_sum_store_'+str(i+1)],
-            #     'train_mean_backlog_sum_store_'+str(i+1): train_stats['mean_backlog_sum_store_'+str(i+1)],
-            #     'train_mean_in_stock_sum_store_'+str(i+1): train_stats['mean_in_stock_sum_store_'+str(i+1)]
-            # })
-            # if args.use_wandb:
-            #     wandb.log(wandb_dict, step=runner.t_env)
 
             if args.use_reward_normalization:
                 episode_batch = reward_scaler.transform(episode_batch)
@@ -240,10 +229,6 @@ def run_sequential(args, logger):
                     episode_sample.to(args.device)
 
                 learner.train(episode_sample, runner.t_env, episode)
-                # QTran里不用删除episode_sample吧
-                # del episode_sample
-
-
 
         # Step 3: Evaluate
         if runner.t_env >= last_test_T + args.test_interval:
@@ -268,24 +253,14 @@ def run_sequential(args, logger):
             test_stats, test_lambda_return, test_old_return = \
                 test_runner.run(test_mode=True, lbda_index=0)
             wandb_dict.update({
-                'val_return_lbda_0': val_lambda_return,
                 'val_return_old': val_old_return,
                 'val_max_instock_sum': val_stats['max_in_stock_sum'],
                 'val_mean_in_stock_sum': val_stats['mean_in_stock_sum'],
-                'test_return_lbda_0': test_lambda_return,
                 'test_return_old': test_old_return,
                 'test_max_instock_sum': test_stats['max_in_stock_sum'],
                 'test_mean_in_stock_sum': test_stats['mean_in_stock_sum'],
             })
-            # for i in range(3):
-            #     wandb_dict.update({
-            #     'test_mean_excess_sum_store_'+str(i+1): test_stats['mean_excess_sum_store_'+str(i+1)],
-            #     'test_mean_backlog_sum_store_'+str(i+1): test_stats['mean_backlog_sum_store_'+str(i+1)],
-            #     'test_mean_in_stock_sum_store_'+str(i+1): test_stats['mean_in_stock_sum_store_'+str(i+1)],
-            #     'val_mean_excess_sum_store_'+str(i+1): val_stats['mean_excess_sum_store_'+str(i+1)],
-            #     'val_mean_backlog_sum_store_'+str(i+1): val_stats['mean_backlog_sum_store_'+str(i+1)],
-            #     'val_mean_in_stock_sum_store_'+str(i+1): val_stats['mean_in_stock_sum_store_'+str(i+1)]
-            # })
+
             if val_old_return > val_best_return:
                 val_best_return = val_old_return
                 print("new best val result : {}".format(val_old_return))
@@ -300,16 +275,6 @@ def run_sequential(args, logger):
                 # use appropriate filenames to do critics, optimizer states
                 print("Update best model, val return : {}, test return : {}".format(val_old_return, test_old_return))
                 learner.save_models(save_path, postfix="_best")
-
-            # for i in range(3):
-            #     wandb_dict.update({
-            #     'test_mean_excess_sum_store_'+str(i+1): test_stats['mean_excess_sum_store_'+str(i+1)],
-            #     'test_mean_backlog_sum_store_'+str(i+1): test_stats['mean_backlog_sum_store_'+str(i+1)],
-            #     'test_mean_in_stock_sum_store_'+str(i+1): test_stats['mean_in_stock_sum_store_'+str(i+1)],
-            #     'val_mean_excess_sum_store_'+str(i+1): val_stats['mean_excess_sum_store_'+str(i+1)],
-            #     'val_mean_backlog_sum_store_'+str(i+1): val_stats['mean_backlog_sum_store_'+str(i+1)],
-            #     'val_mean_in_stock_sum_store_'+str(i+1): val_stats['mean_in_stock_sum_store_'+str(i+1)]
-            # })
 
         if args.use_wandb:
             wandb.log(wandb_dict, step=runner.t_env)

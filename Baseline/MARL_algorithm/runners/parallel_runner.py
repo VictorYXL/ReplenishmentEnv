@@ -148,14 +148,6 @@ class ParallelRunner:
             []
         )  # may store extra stats like battle won. this is filled in ORDER OF TERMINATION
 
-        if test_mode:
-            lbda_indices = np.array([lbda_index] * self.batch_size)
-        elif self.args.use_single_lambda_sampling:
-            lbda_indices = np.array([self.args.sampling_lambda_index] * self.batch_size)
-        else:
-            lbda_indices = np.random.choice(self.args.n_lambda, size=self.batch_size)
-        # lbda_indices = torch.tensor(lbda_indices, dtype=torch.long, device=self.args.device)
-
         save_probs = getattr(self.args, "save_probs", False)
 
         while True:
@@ -296,7 +288,6 @@ class ParallelRunner:
             parent_conn.send(("get_profit", None))
         for parent_conn in self.parent_conns:
             episode_profit = parent_conn.recv()
-            # 都除以了horizon，并乘以了episode_limit.在当前配置下，意味着test profit扩大到了10/6倍
             episode_profits.append(episode_profit / self.t * (self.episode_limit))
 
         # Get stats back for each env
@@ -336,21 +327,13 @@ class ParallelRunner:
         mean_in_stock_seq = [d['mean_in_stock_sum'] for d in final_env_infos]
         cur_stats['mean_in_stock_sum'] = np.mean(mean_in_stock_seq)
 
-
-        # for i in range(3):
-        #     mean_in_stock_store_seq = [d['mean_in_stock_sum_store_'+str(i+1)] for d in final_env_infos]
-        #     mean_excess_store_seq = [d['mean_excess_sum_store_'+str(i+1)] for d in final_env_infos]
-        #     mean_backlog_store_seq = [d['mean_backlog_sum_store_'+str(i+1)] for d in final_env_infos]
-        #     cur_stats['mean_in_stock_sum_store_'+str(i+1)] = np.mean(mean_in_stock_store_seq)
-        #     cur_stats['mean_excess_sum_store_'+str(i+1)] = np.mean(mean_excess_store_seq)
-        #     cur_stats['mean_backlog_sum_store_'+str(i+1)] = np.mean(mean_backlog_store_seq)
         cur_returns.extend(episode_returns)
         cur_profits.extend(episode_profits)
 
         n_test_runs = (
             max(1, self.args.test_nepisode // self.batch_size) * self.batch_size
         )
-        # 如果是测试模式，就返回这个结果，用于画图
+
         if test_mode:
             cur_returns = np.array(cur_returns)
             mean_returns = cur_returns.mean(axis=0)
@@ -360,7 +343,6 @@ class ParallelRunner:
             profits = (cur_profits.mean(axis=0)).sum(axis=-1)
 
             return cur_stats, lambda_return, profits
-        # 增加一些中间数据，对训练模式也要打印
         else:
             cur_returns = np.array(cur_returns)
             mean_returns = cur_returns.mean(axis=0)
@@ -523,7 +505,6 @@ def env_worker(remote, env_fn):
             remote.send(env._env.storage_capacity)
         elif cmd == "set_storage_capacity":
             env.set_storage_capacity(data)
-            # env._env.storage_capacity = storage_capacity
         else:
             raise NotImplementedError
 

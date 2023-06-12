@@ -1,11 +1,11 @@
 import sys
+import os
 from collections.abc import Mapping
 from copy import deepcopy
 import numpy as np
 import torch
 import yaml
 import pdb
-import os
 import wandb
 import warnings
 # warnings.filterwarnings("ignore")
@@ -13,10 +13,9 @@ import warnings
 from sacred import SETTINGS, Experiment
 from sacred.observers import FileStorageObserver
 from sacred.utils import apply_backspaces_and_linefeeds
-
-from run import REGISTRY as run_REGISTRY
-from utils.logging import get_logger
-
+sys.path.append(os.path.join(os.getcwd(), "Baseline/MARL_algorithm"))
+from Baseline.MARL_algorithm.run import REGISTRY as run_REGISTRY
+from Baseline.MARL_algorithm.utils.logging import get_logger
 
 SETTINGS["CAPTURE_MODE"] = "fd"  # set to "no" if you want to see stdout/stderr in console
 logger = get_logger()
@@ -60,7 +59,7 @@ def _get_config(params, arg_name, subfolder):
         with open(
             os.path.join(
                 os.path.dirname(__file__),
-                "config",
+                "Baseline/MARL_algorithm/config",
                 subfolder,
                 "{}.yaml".format(config_name),
             ),
