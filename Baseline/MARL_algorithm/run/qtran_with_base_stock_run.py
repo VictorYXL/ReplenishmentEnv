@@ -149,12 +149,12 @@ def run_sequential(args, logger):
 
     # Give runner the scheme
     runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
-    val_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
-    test_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
+    val_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac, set_stock_levels = runner.set_stock_levels)
+    test_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac, set_stock_levels = runner.set_stock_levels)
 
     if args.visualize:
-        visual_runner = r_REGISTRY["episode"](args=args, logger=logger)
-        visual_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
+        visual_runner = r_REGISTRY["episode_with_base_stock"](args=args, logger=logger)
+        visual_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac, set_stock_levels = runner.set_stock_levels)
 
     # Learner
     learner = le_REGISTRY[args.learner](mac, buffer.scheme, logger, args)
@@ -166,17 +166,14 @@ def run_sequential(args, logger):
         learner.cuda()
 
     if args.checkpoint_path:
-        test_runner.mac.load_models(args.checkpoint_path, postfix = '_best')
-
-        if args.evaluate or args.save_replay:
-            vis_save_path = os.path.join(
-                args.local_results_path, args.unique_token, "vis"
-            ) if os.getenv("AMLT_OUTPUT_DIR") is None else os.path.join(os.getenv("AMLT_OUTPUT_DIR"), "results", args.unique_token, "vis")
-            print("vis path: ", vis_save_path)
-            test_runner.run(test_mode=True, visual_outputs_path=vis_save_path)
-            test_cur_avg_balances = test_runner.get_overall_avg_balance()
-            logger.console_logger.info("test_cur_avg_balances : {}".format(test_cur_avg_balances))
-            return
+        visual_runner.mac.load_models(args.checkpoint_path, postfix = '_800')
+        vis_save_path = os.path.join(
+            args.local_results_path, args.unique_token, "vis"
+        ) if os.getenv("AMLT_OUTPUT_DIR") is None else os.path.join(os.getenv("AMLT_OUTPUT_DIR"), "results", args.unique_token, "vis")
+        logger.console_logger.info("Visualized result saved in {}".format(vis_save_path))
+        visual_runner.run_visualize(visualize_path=vis_save_path, t="")
+        logger.console_logger.info("Finish visualizing")
+        return
 
     # Start training
     episode = 0

@@ -5,13 +5,13 @@ test_nepisode: 10                       # Evaluate the policy at the end of trai
 test_interval: 50000                    # Evaluate the policy for every test_interval iterations
 log_interval: 10000                     # Print stats to console for every log_interval iterations
 visualize: False                        # Whether to visualize the policy
-visualize_interval: 5000                # Visualize the policy for every visualize_interval iterations
+visualize_interval: 500000                # Visualize the policy for every visualize_interval iterations
 # runner_log_interval: 10000            # Logging in the runner (deprecated)
 learner_log_interval: 10000             # Logging in the learner (deprecated)
 save_model: True                        # Whether save the models to disk
 save_model_interval: 1460000            # Save the model for every save_model_interval iterations
 checkpoint_path: ""                     # If not empty, load a mac checkpoint from this path
-evaluate: False                         # Evaluate model for test_nepisode episodes and quit (no training)
+evaluate: False                         # Evaluate model for test_nepisode episodes and quit (no training)(deprecated)
 save_replay: True                      # Saving the replay of the model loaded from checkpoint_path (deprecated)
 local_results_path: "results"           # Path for local results
 use_wandb: True                         # Whether log results to wandb
@@ -47,7 +47,7 @@ target_update_interval: 200             # Update the target Q network after targ
 critic_type: "mappo_rnn_critic_share"
 critic_input_seq_str: 'o'
 
-mac: "mappo_mac_with_base_stock"        # Which multi-agent controller REGISTER to use
+mac: "mappo_mac"        # Which multi-agent controller REGISTER to use
 agent: "n_rnn"                          # Which NN structure REGISTER to use for the Q network and the Whittle index network;
                                         #   n_rnn indicates a shared-parameter RNN Q network for each agent (FC-GRU-FC)
 use_layer_norm: True                    # Whether to use layer norm (deprecated)

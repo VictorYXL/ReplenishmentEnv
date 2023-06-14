@@ -498,9 +498,8 @@ def env_worker(remote, env_fn):
             remote.send(env._env.reward_monitor)
         elif cmd == "visualize_render":
             env.visualize_render(data)
-            profit = env.get_profit()
-            print("test_cur_avg_balances : {}".format(profit.sum()))
-            return 0
+            # profit = env.get_profit()
+            # print("test_cur_avg_balances : {}".format(profit.sum()))
         elif cmd == "get_storage_capacity":
             remote.send(env._env.storage_capacity)
         elif cmd == "set_storage_capacity":

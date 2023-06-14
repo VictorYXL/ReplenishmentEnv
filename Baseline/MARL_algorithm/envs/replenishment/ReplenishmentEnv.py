@@ -111,6 +111,7 @@ class ReplenishmentEnv(MultiAgentEnv):
     def step(self, actions):
         """Returns reward, terminated, info"""
         self.env_t += 1
+        # actions = actions.reshape(-1)
         actions = [int(a) for a in actions]
         self._obs, reward, done, info = self._env.step(actions)
         self._obs = [

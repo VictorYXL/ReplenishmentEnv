@@ -292,7 +292,7 @@ def run_sequential(args, logger):
                 f"Saving visualizations to {visual_outputs_path}/{runner.t_env}"
             )
 
-            visual_runner.run_visualize(visual_outputs_path, runner.t_env)
+            visual_runner.run_visualize(runner.t_env)
 
         # Step 6: Finalize
         episode += args.batch_size_run
