@@ -1,0 +1,11 @@
+gym>=0.26.0
+numpy>=1.20.3
+setuptools
+pyaml
+pandas
+cvxpy
+cvxopt
+wandb
+torch
+sacred
+pyecharts

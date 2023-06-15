@@ -2,7 +2,6 @@
 import os
 import numpy as np
 import sys
-import pandas as pd
 
 env_dir = os.path.join(os.path.split(os.path.realpath(__file__))[0], "..")
 sys.path.insert(0, env_dir)

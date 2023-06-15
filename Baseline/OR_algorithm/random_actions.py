@@ -12,6 +12,6 @@ if __name__ == "__main__":
     env = make_env(env_name, wrapper_names=["DefaultWrapper"], mode="test", vis_path=vis_path)
     env.reset()
     for i in range(10):
-        action_list = [[1 * 10 for i in range(1000)] for j in range(3)]
+        action_list = [[random.random() * 10 for i in range(1000)] for j in range(3)]
         states, rewards, done, info_states = env.step(action_list) 
     print(info_states["balance"])
