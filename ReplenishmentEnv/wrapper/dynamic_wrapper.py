@@ -22,7 +22,7 @@ class DynamicWrapper(DefaultWrapper):
         To avoid the obfuscation, update_config is only needed when reset with update.
     """
     def reset(self) -> None:
-        self.env.reset()
+        return self.env.reset()
     
     def get_selling_price(self, warehouse="all_warehouses", sku="all_skus") -> np.array:
         return self.env.agent_states[warehouse, "selling_price", "lookback", sku].copy()

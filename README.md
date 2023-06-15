@@ -77,10 +77,10 @@ The MARL training only tested in Linux. The training curve are available in wand
     * Specify hyper parameter if needed in algorithm file, such as [ippo.yaml](Baseline\MARL_algorithm\config\algo\ippo.yaml)
     * Run ```python main.py --config=ippo --env-config=replenishment```
     * Get training curve in wandb
-    * If need visualization policy, set the ```visualize:True``` om algorithm file
+    * If need visualization policy, set the ```visualize:True``` on algorithm file
 * QTRAN training
     * Specify the environment by modify the task_type field in [replenishment.yaml](Baseline\MARL_algorithm\config\envs\replenishment.yaml)
     * Specify hyper parameter if needed in algorithm file, such as [qtran.yaml](Baseline\MARL_algorithm\config\algo\qtran.yaml)
     * Run ```python main.py --config=qtran --env-config=replenishment```
     * Get training curve in wandb
-    * If need visualization policy, set the ```visualize:True``` om algorithm file
+    * If need visualization policy, set the ```visualize:True``` on algorithm file

@@ -131,7 +131,7 @@ class LocalPPOLearner:
             pi_taken = torch.gather(pi, dim=3, index=actions)
             log_pi_taken = torch.log(pi_taken)
 
-            ratios = torch.exp(log_pi_taken - old_logprob) # 旧策略和新策略的比ratio
+            ratios = torch.exp(log_pi_taken - old_logprob) 
             surr1 = ratios * normed_advantages
             surr2 = (
                 torch.clamp(ratios, 1 - self.args.eps_clip, 1 + self.args.eps_clip)
@@ -172,33 +172,6 @@ class LocalPPOLearner:
                            'targets': targets.mean().item(),
                            'reward': rewards.mean(),
                            })
-
-        # if t_env - self.log_stats_t >= self.args.learner_log_interval:
-        #     mask_elems = mask_agent.sum().item()
-        #     self.logger.log_stat(
-        #         "local_advantage_mean",
-        #         (advantages * mask_agent).sum().item() / mask_elems,
-        #         t_env,
-        #     )
-        #     self.logger.log_stat("local_actor_loss", actor_loss.item(), t_env)
-        #     self.logger.log_stat("local_entropy_loss", entropy_loss.item(), t_env)
-        #     self.logger.log_stat("local_grad_norm", grad_norm.item(), t_env)
-        #     self.logger.log_stat("lr", self.last_lr, t_env)
-        #     self.logger.log_stat("local_critic_loss", critic_loss.item(), t_env)
-        #     self.logger.log_stat(
-        #         "local_target_mean",
-        #         (targets * mask_agent).sum().item() / mask_elems,
-        #         t_env,
-        #     )
-        #     self.log_stats_t = t_env
-        # return {
-        #     "local_actor_loss": actor_loss.item(),
-        #     "local_entropy_loss": entropy_loss.item(),
-        #     "local_grad_norm": grad_norm.item(),
-        #     "local_critic_loss": critic_loss.item(),
-        #     "local_target_mean": (targets * mask_agent).sum().item()
-        #     / mask_agent.sum().item(),
-        # }
 
     def cuda(self):
         self.mac.cuda()

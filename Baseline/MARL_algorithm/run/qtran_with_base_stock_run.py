@@ -84,11 +84,10 @@ def run_sequential(args, logger):
 
     # Init runner so we can get env info
     runner = r_REGISTRY[args.runner](args=args, logger=logger)
-    runner.env_info['n_agents'] = int(runner.env_info['n_agents']/3)
-    runner.env_info['state_shape'] = int(runner.env_info['state_shape']/3)
-    # Set up schemes and groups here
-    val_best_return = -np.inf
     env_info = runner.get_env_info()
+    runner.env_info['n_agents'] = int(runner.env_info['n_agents']/env_info["n_warehouses"])
+    runner.env_info['state_shape'] = int(runner.env_info['state_shape']/env_info["n_warehouses"])
+    # Set up schemes and groups here
     args.n_agents = env_info["n_agents"]
     args.n_actions = env_info["n_actions"]
     args.state_shape = env_info["state_shape"]
@@ -150,12 +149,12 @@ def run_sequential(args, logger):
 
     # Give runner the scheme
     runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
-    val_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
-    test_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
+    val_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac, set_stock_levels = runner.set_stock_levels)
+    test_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac, set_stock_levels = runner.set_stock_levels)
 
     if args.visualize:
-        visual_runner = r_REGISTRY["episode"](args=args, logger=logger)
-        visual_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
+        visual_runner = r_REGISTRY["episode_with_base_stock"](args=args, logger=logger)
+        visual_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac, set_stock_levels = runner.set_stock_levels)
 
     # Learner
     learner = le_REGISTRY[args.learner](mac, buffer.scheme, logger, args)
@@ -167,17 +166,14 @@ def run_sequential(args, logger):
         learner.cuda()
 
     if args.checkpoint_path:
-        test_runner.mac.load_models(args.checkpoint_path, postfix = '_best')
-
-        if args.evaluate or args.save_replay:
-            vis_save_path = os.path.join(
-                args.local_results_path, args.unique_token, "vis"
-            ) if os.getenv("AMLT_OUTPUT_DIR") is None else os.path.join(os.getenv("AMLT_OUTPUT_DIR"), "results", args.unique_token, "vis")
-            print("vis path: ", vis_save_path)
-            test_runner.run(test_mode=True, visual_outputs_path=vis_save_path)
-            test_cur_avg_balances = test_runner.get_overall_avg_balance()
-            logger.console_logger.info("test_cur_avg_balances : {}".format(test_cur_avg_balances))
-            return
+        visual_runner.mac.load_models(args.checkpoint_path, postfix = '_800')
+        vis_save_path = os.path.join(
+            args.local_results_path, args.unique_token, "vis"
+        ) if os.getenv("AMLT_OUTPUT_DIR") is None else os.path.join(os.getenv("AMLT_OUTPUT_DIR"), "results", args.unique_token, "vis")
+        logger.console_logger.info("Visualized result saved in {}".format(vis_save_path))
+        visual_runner.run_visualize(visualize_path=vis_save_path, t="")
+        logger.console_logger.info("Finish visualizing")
+        return
 
     # Start training
     episode = 0
@@ -185,9 +181,7 @@ def run_sequential(args, logger):
     last_log_T = 0
     model_save_time = 0
     visual_time = 0
-    max_avg_balance = -1
-    test_max_avg_balance = -1
-    max_model_path = None
+    val_best_return = -np.inf
 
     start_time = time.time()
     last_time = start_time
@@ -210,14 +204,12 @@ def run_sequential(args, logger):
                 'train_max_instock_sum': train_stats['max_in_stock_sum'],
                 'train_mean_in_stock_sum': train_stats['mean_in_stock_sum']
             })
-            for i in range(3):
+            for i in range(env_info["n_warehouses"]):
                 wandb_dict.update({
                 'train_mean_excess_sum_store_'+str(i+1): train_stats['mean_excess_sum_store_'+str(i+1)],
                 'train_mean_backlog_sum_store_'+str(i+1): train_stats['mean_backlog_sum_store_'+str(i+1)],
                 'train_mean_in_stock_sum_store_'+str(i+1): train_stats['mean_in_stock_sum_store_'+str(i+1)]
             })
-            # if args.use_wandb:
-            #     wandb.log(wandb_dict, step=runner.t_env)
 
             if args.use_reward_normalization:
                 episode_batch = reward_scaler.transform(episode_batch)
@@ -241,10 +233,6 @@ def run_sequential(args, logger):
                     episode_sample.to(args.device)
 
                 learner.train(episode_sample, runner.t_env, episode)
-                # QTran里不用删除episode_sample吧
-                # del episode_sample
-
-
 
         # Step 3: Evaluate
         if runner.t_env >= last_test_T + args.test_interval:
@@ -269,16 +257,14 @@ def run_sequential(args, logger):
             test_stats, test_lambda_return, test_old_return = \
                 test_runner.run(test_mode=True, lbda_index=0)
             wandb_dict.update({
-                'val_return_lbda_0': val_lambda_return,
                 'val_return_old': val_old_return,
                 'val_max_instock_sum': val_stats['max_in_stock_sum'],
                 'val_mean_in_stock_sum': val_stats['mean_in_stock_sum'],
-                'test_return_lbda_0': test_lambda_return,
                 'test_return_old': test_old_return,
                 'test_max_instock_sum': test_stats['max_in_stock_sum'],
                 'test_mean_in_stock_sum': test_stats['mean_in_stock_sum'],
             })
-            for i in range(3):
+            for i in range(env_info["n_warehouses"]):
                 wandb_dict.update({
                 'test_mean_excess_sum_store_'+str(i+1): test_stats['mean_excess_sum_store_'+str(i+1)],
                 'test_mean_backlog_sum_store_'+str(i+1): test_stats['mean_backlog_sum_store_'+str(i+1)],
@@ -301,16 +287,6 @@ def run_sequential(args, logger):
                 # use appropriate filenames to do critics, optimizer states
                 print("Update best model, val return : {}, test return : {}".format(val_old_return, test_old_return))
                 learner.save_models(save_path, postfix="_best")
-
-            # for i in range(3):
-            #     wandb_dict.update({
-            #     'test_mean_excess_sum_store_'+str(i+1): test_stats['mean_excess_sum_store_'+str(i+1)],
-            #     'test_mean_backlog_sum_store_'+str(i+1): test_stats['mean_backlog_sum_store_'+str(i+1)],
-            #     'test_mean_in_stock_sum_store_'+str(i+1): test_stats['mean_in_stock_sum_store_'+str(i+1)],
-            #     'val_mean_excess_sum_store_'+str(i+1): val_stats['mean_excess_sum_store_'+str(i+1)],
-            #     'val_mean_backlog_sum_store_'+str(i+1): val_stats['mean_backlog_sum_store_'+str(i+1)],
-            #     'val_mean_in_stock_sum_store_'+str(i+1): val_stats['mean_in_stock_sum_store_'+str(i+1)]
-            # })
 
         if args.use_wandb:
             wandb.log(wandb_dict, step=runner.t_env)

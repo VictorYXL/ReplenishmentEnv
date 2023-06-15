@@ -2,9 +2,9 @@ env: "replenishment"
 
 env_args:
   key: "replenishment_efficient_env-v0"
-  map_name: "sku200.standard"
-  n_agents: 200
-  task_type: "sku200.single_store.standard"
+  map_name: "sku50.standard"
+  n_agents: 50
+  task_type: "sku50.single_store.standard"
   mode: train
   time_limit: 100
   reward: "reward2"
