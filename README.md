@@ -8,11 +8,11 @@ Replenishment environment for OR and RL algorithms
 | Folder      | Description                                                                                       |
 | ----------- | ------------------------------------------------------------------------------------------------- |
 | [ReplenishmentEnv](ReplenishmentEnv)      | Replenishment env source code.                                      |
-| [ReplenishmentEnv\config](ReplenishmentEnv\config)      | Config for building the env.                          |
-| [ReplenishmentEnv\data](ReplenishmentEnv\data)      | Csv based data for skus, including sku_list, info and other dynamic data|
-| [ReplenishmentEnv\env](ReplenishmentEnv\env)      | Kernel simulator for env                                    |
-| [ReplenishmentEnv\utility](ReplenishmentEnv\utility)      | Utility simulator for env and wrapper               |
-| [ReplenishmentEnv\wrapper](ReplenishmentEnv\wrapper)      | Wrapper for env                 |
+| [ReplenishmentEnv/config](ReplenishmentEnv/config)      | Config for building the env.                          |
+| [ReplenishmentEnv/data](ReplenishmentEnv/data)      | Csv based data for skus, including sku_list, info and other dynamic data|
+| [ReplenishmentEnv/env](ReplenishmentEnv/env)      | Kernel simulator for env                                    |
+| [ReplenishmentEnv/utility](ReplenishmentEnv/utility)      | Utility simulator for env and wrapper               |
+| [ReplenishmentEnv/wrapper](ReplenishmentEnv/wrapper)      | Wrapper for env                 |
 | [Baseline](Baseline)                        | Show case of replenishment env.                                     |
 
 ## Preparation
@@ -39,7 +39,7 @@ python setup.py install
 ## Demo to build a environment
 * Prepare the data including SKU data and warehouse information.
 
-* Write config into [config](ReplenishmentEnv\config) with demo [demo.yaml](ReplenishmentEnv\config\demo.yml)
+* Write config into [config](ReplenishmentEnv/config) with demo [demo.yaml](ReplenishmentEnv/config/demo.yml)
 
 ## Run OR algorithm
 ```
@@ -73,14 +73,14 @@ Visualization policy will be in output folder.
 ## Run MARL algorithm
 The MARL training only tested in Linux. The training curve are available in wandb.
 * IPPO training
-    * Specify the environment by modify the task_type field in [replenishment.yaml](Baseline\MARL_algorithm\config\envs\replenishment.yaml)
-    * Specify hyper parameter if needed in algorithm file, such as [ippo.yaml](Baseline\MARL_algorithm\config\algo\ippo.yaml)
+    * Specify the environment by modify the task_type field in [replenishment.yaml](Baseline/MARL_algorithm/config/envs/replenishment.yaml)
+    * Specify hyper parameter if needed in algorithm file, such as [ippo.yaml](Baseline/MARL_algorithm/config/algo/ippo.yaml)
     * Run ```python main.py --config=ippo --env-config=replenishment```
     * Get training curve in wandb
     * If need visualization policy, set the ```visualize:True``` on algorithm file
 * QTRAN training
-    * Specify the environment by modify the task_type field in [replenishment.yaml](Baseline\MARL_algorithm\config\envs\replenishment.yaml)
-    * Specify hyper parameter if needed in algorithm file, such as [qtran.yaml](Baseline\MARL_algorithm\config\algo\qtran.yaml)
+    * Specify the environment by modify the task_type field in [replenishment.yaml](Baseline/MARL_algorithm/config/envs/replenishment.yaml)
+    * Specify hyper parameter if needed in algorithm file, such as [qtran.yaml](Baseline/MARL_algorithm/config/algo/qtran.yaml)
     * Run ```python main.py --config=qtran --env-config=replenishment```
     * Get training curve in wandb
     * If need visualization policy, set the ```visualize:True``` on algorithm file
