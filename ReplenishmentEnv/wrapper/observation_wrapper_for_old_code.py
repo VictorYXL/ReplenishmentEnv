@@ -22,7 +22,7 @@ class ObservationWrapper4OldCode(gym.Wrapper):
         self.column_lens["intransit_hist_sum"] = self.env.lookback_len
         
         self.state_dim = 0
-        self.state_info = ["local_info", "global_info"]# "rank_info", "mean_field"]
+        self.state_info = ["local_info", "global_info", "level_info"]
         if "local_info" in self.state_info:
             self.local_info_dim = (16 + self.column_lens["demand_hist"] + self.column_lens["hist_order"])
             self.state_dim += self.local_info_dim
@@ -32,6 +32,8 @@ class ObservationWrapper4OldCode(gym.Wrapper):
             self.state_dim += (7 + self.column_lens["intransit_hist_sum"])
         if "rank_info" in self.state_info:
             self.state_dim += 7
+        if "level_info" in self.state_info:
+            self.state_dim += self.n_warehouses
 
         self.state = np.zeros((len(self.env.sku_list), self.state_dim))
 
@@ -45,7 +47,10 @@ class ObservationWrapper4OldCode(gym.Wrapper):
 
         # add mode to match old code.
         self.mode = "train"
-        self.max_in_stock_sum = 0
+        self.in_stock_sum = []
+        self.in_stock = []
+        self.excess_sum = []
+        self.backlog_sum = []
 
         
     """
@@ -162,6 +167,10 @@ class ObservationWrapper4OldCode(gym.Wrapper):
             # instock_intransit_profit
             state_list.append((np.ones((self.n_warehouses, self.n_skus)) * np.sum((inventory_estimated * sku_profit), axis=-1)[:, np.newaxis] / \
                         ((np.sum(inventory_estimated, axis=-1)[:, np.newaxis] + 1) * price_normalize))[:, :, np.newaxis])
+            
+        if "level_info" in self.state_info:
+            one_hot = np.repeat(np.eye(self.n_warehouses), self.n_skus, axis = 0).reshape((self.n_warehouses, self.n_skus, self.n_warehouses))
+            state_list.append(one_hot)
 
         # Rank infos
         if "rank_info" in self.state_info:
@@ -194,10 +203,27 @@ class ObservationWrapper4OldCode(gym.Wrapper):
         _, rewards, done, infos = self.env.step(actions)
         self.env.pre_step()
         states = self.get_state_v1()
-        self.max_in_stock_sum = max(self.max_in_stock_sum, self.env.agent_states["all_warehouses", "in_stock"].sum())
+        self.in_stock_sum.append(self.env.agent_states["all_warehouses", "in_stock"].sum())
+        excess_cost = self.env.agent_states["all_warehouses","excess"]*self.env.agent_states["all_warehouses","overflow_cost_ratio"]
+        backlog_cost = (self.env.agent_states["all_warehouses","selling_price"] - self.env.agent_states["all_warehouses","procurement_cost"]) * (
+            self.env.agent_states["all_warehouses","demand"] - self.env.agent_states["all_warehouses","sale"]) * self.env.agent_states["all_warehouses","backlog_ratio"] 
+        if not isinstance(self.excess_sum, np.ndarray):
+            self.in_stock = self.env.agent_states["all_warehouses", "in_stock"].sum(axis = 1, keepdims = True)
+            self.excess_sum = excess_cost.sum(axis = 1, keepdims = True)
+            self.backlog_sum = backlog_cost.sum(axis = 1, keepdims = True)
+        else:
+            self.in_stock = np.concatenate((self.in_stock, self.env.agent_states["all_warehouses", "in_stock"].sum(axis = 1, keepdims = True)), axis = 1)
+            self.excess_sum = np.concatenate((self.excess_sum, excess_cost.sum(axis = 1, keepdims = True)), axis = 1)
+            self.backlog_sum = np.concatenate((self.backlog_sum, backlog_cost.sum(axis = 1, keepdims = True)), axis = 1)
         self.env.next_step()
 
-        infos["max_in_stock_sum"] = self.max_in_stock_sum
+        infos['cur_balance'] = self.env.per_balance.copy()
+        infos['max_in_stock_sum'] = max(self.in_stock_sum)
+        infos['mean_in_stock_sum'] = np.mean(self.in_stock_sum)
+        for i in range(self.n_warehouses):
+            infos['mean_in_stock_sum_store_'+str(i+1)] = np.mean(self.in_stock[i])
+            infos['mean_excess_sum_store_'+str(i+1)] = np.mean(self.excess_sum[i])
+            infos['mean_backlog_sum_store_'+str(i+1)] = np.mean(self.backlog_sum[i])
         return states, rewards, done, infos
 
     """
@@ -206,7 +232,10 @@ class ObservationWrapper4OldCode(gym.Wrapper):
         To avoid the obfuscation, update_config is only needed when reset with update
     """
     def reset(self) -> None:
-        self.max_in_stock_sum = 0
+        self.in_stock_sum = []
+        self.excess_sum = []
+        self.backlog_sum = []
+        self.in_stock = []
         self.env.reset()
         self.env.pre_step()
         states = self.get_state_v1()

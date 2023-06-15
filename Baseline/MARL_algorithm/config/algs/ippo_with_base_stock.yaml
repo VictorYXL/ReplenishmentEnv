@@ -1,0 +1,94 @@
+# ======== Evaluation and Logging ========
+
+test_greedy: True                       # Use greedy evaluation (if False, will set epsilon floor to 0)
+test_nepisode: 10                       # Evaluate the policy at the end of training for test_nepsidoes episodes
+test_interval: 50000                    # Evaluate the policy for every test_interval iterations
+log_interval: 10000                     # Print stats to console for every log_interval iterations
+visualize: False                        # Whether to visualize the policy
+visualize_interval: 500000                # Visualize the policy for every visualize_interval iterations
+# runner_log_interval: 10000            # Logging in the runner (deprecated)
+learner_log_interval: 10000             # Logging in the learner (deprecated)
+save_model: True                        # Whether save the models to disk
+save_model_interval: 1460000            # Save the model for every save_model_interval iterations
+checkpoint_path: ""                     # If not empty, load a mac checkpoint from this path
+evaluate: False                         # Evaluate model for test_nepisode episodes and quit (no training)(deprecated)
+save_replay: True                      # Saving the replay of the model loaded from checkpoint_path (deprecated)
+local_results_path: "results"           # Path for local results
+use_wandb: True                         # Whether log results to wandb
+wandb_project_name: "whittle_index"     # The project name of the wandb project
+use_tensorboard: False                  # Whether log results to tensorboard
+
+# ======== Sampling ========
+
+runner: "parallel_with_base_stock"      # The runner used to collect samples for training
+batch_size: 8                           # Collect batch_size episodes for training in each iteration
+batch_size_run: 8                       # Run batch_size_run parallel environments in the runner
+buffer_size: 8                          # The maximum number of episodes stored in the buffer
+buffer_cpu_only: True                   # Whether to store the buffer in the CPU memory
+
+# ======== Algorithm ========
+
+name: "ippo_ir"                         # The name of the algorithm
+run: "ippo_with_base_stock_run"         # Which runner REGISTER to use
+use_cuda: True                          # Whether to use GPU
+seed: 101                               # The random seed used in numpy, torch, etc.
+t_max: 5020000                          # Train t_max iterations in total
+
+action_selector: "multinomial"          # How to select actions during the training (and maybe evaluation depending on test_greedy)
+epsilon_start: 1.0                      # Annealing from epsilon_start to epsilon_finish linearly in epsilon_anneal_time iterations
+epsilon_finish: 0.05
+epsilon_anneal_time: 50000
+save_probs: True                        # Whether to also return the action selection probablity from the action selector
+mask_before_softmax: True
+
+learner: "local_ppo_learner"            # Which learner REGISTER to use
+use_double_q: True                          # Whether to use double Q 
+target_update_interval: 200             # Update the target Q network after target_update_interval iterations
+critic_type: "mappo_rnn_critic_share"
+critic_input_seq_str: 'o'
+
+mac: "mappo_mac"        # Which multi-agent controller REGISTER to use
+agent: "n_rnn"                          # Which NN structure REGISTER to use for the Q network and the Whittle index network;
+                                        #   n_rnn indicates a shared-parameter RNN Q network for each agent (FC-GRU-FC)
+use_layer_norm: True                    # Whether to use layer norm (deprecated)
+use_orthogonal: True                    # Whether to use layer orthogonal (deprecated)
+agent_output_type: "pi_logits"          # What is the output format of the agent (Q network)
+actor_input_seq_str: "o_la"             # The format of the inputs to the networks;
+                                        #   o_la indicates the local state (observatoin) plus one-hot last actions (e.g., dim=86+34)
+obs_last_action: True                   # Whether include the agent"s last action (one_hot) in the observation
+obs_agent_id: False                     # Whether to append the one-hot agent id to the observation
+hidden_dim: 128                         # The number of hidden units for the Q network
+whittle_hidden_dim: 128                 # The number of hiddent units for the Whittle index network
+
+gamma: 0.985                            # Discount rate for the MDP
+optim: "Adam"                           # Whether to use "Adam" or "RMSprop"
+lr: 0.0005                              # Learning rate used for Q network and Whittle index network training
+optim_alpha: 0.99                       # alpha in RMSProp
+optim_eps: 0.00001                      # epsilon in RMSProp
+grad_norm_clip: 10                      # Reduce magnitude of gradients above this L2 norm
+critic_coef: 0.5
+entropy_coef: 0 #0.001 
+reg_coef: 0.01
+gae_lambda: 0.95
+mini_epochs: 2
+eps_clip: 0.15
+gain: 0.01
+
+use_n_lambda: False                     # Whether to learn the Q values for different lambdas
+n_lambda: 51                            # How many lambdas to use; 
+                                        # We use lambdas = linspace(0, 10, 51) in the hard code, DO NOT CHANGE
+use_individual_rewards: True            # Whether to train the agents using individual rewards
+use_mean_team_reward: True              # Whether to train the agents using mean team rewards
+
+use_reward_normalization: False          # Whether to normalize reward; 
+                                        #   If True, we estimate a reward scaler for each lambda 
+                                        #   and use it to transform the reward with these fixed scalers
+use_loss_normalization: False           # Whether to normlize loss;
+                                        #   If True, we divide the loss for each lambda with std
+use_single_lambda_sampling: False       # Whether to collect samples with only one policy under the certain lambda;
+                                        #   If False, we collect each episode using a randomly sampled lambda
+sampling_lambda_index: 0                #   If True, collect sample use this lambda
+use_sample_prob_weights: True           # Whether to multiply the loss by a weight
+                                        #   If True, give weights equaling the probability of this sample collected by the 
+                                        #   Q value under the lambda (assuming collecting using epsilon greedy with a large 
+                                        #   epsilon) 
