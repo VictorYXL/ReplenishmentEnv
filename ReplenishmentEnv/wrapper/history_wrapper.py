@@ -1,7 +1,7 @@
 import numpy as np 
 import gym
 from typing import Tuple
-from .default_wrapper import DefaultWrapper
+from ReplenishmentEnv.wrapper.default_wrapper import DefaultWrapper
 
 
 """
