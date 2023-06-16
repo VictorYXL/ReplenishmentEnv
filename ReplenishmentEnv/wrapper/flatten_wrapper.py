@@ -1,7 +1,5 @@
 import numpy as np 
 import gym
-import scipy.stats as st
-from gym import spaces
 from typing import Tuple
 
 class FlattenWrapper(gym.Wrapper):

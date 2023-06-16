@@ -6,13 +6,12 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "gym>=0.26.0",
+        "numpy>=1.20.3",
         "pyaml",
         "pandas",
-        "numpy>=1.20.3",
-        "cvxpy",
-        "cvxopt"
+        "pyecharts",
     ],
-    packages=find_packages(exclude=["Example"]),
+    packages=find_packages(include=["ReplenishmentEnv"]),
     include_package_data=True,
     package_data={
         "ReplenishmentEnv": ["config/*.yml", "data/*/*", "ReplenishmentEnv.*py"],
