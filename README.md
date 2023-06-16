@@ -33,10 +33,21 @@ source myenv/bin/activate
 python setup.py install
 ```
 
-## Demo to build a environment
-* Prepare the data including SKU data and warehouse information.
+## Create a environment
+* Create a build-in environment
+```
+from ReplenishmentEnv import make_env
+make_env("{task_name}")
+```
 
-* Write config into [config](ReplenishmentEnv/config) with demo [demo.yaml](ReplenishmentEnv/config/demo.yml)
+* Create a consumed environment
+    * Prepare the data including SKU data and warehouse information.
+    * Write config as the format of demo [demo.yaml](ReplenishmentEnv/config/demo.yml)
+    * Make the env by 
+```
+from ReplenishmentEnv import make_env
+make_env("{config_name}", config_dir="{config_dir}")
+```
 
 ## Run OR algorithm
 * Install MABIM

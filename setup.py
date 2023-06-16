@@ -8,7 +8,8 @@ setup(
         "gym>=0.26.0",
         "numpy>=1.20.3",
         "pyaml",
-        "pandas"
+        "pandas",
+        "pyecharts",
     ],
     packages=find_packages(include=["ReplenishmentEnv"]),
     include_package_data=True,
