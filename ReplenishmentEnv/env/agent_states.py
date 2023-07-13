@@ -271,7 +271,12 @@ class AgentStates(object):
     """
     def init_in_stock(self, warehouse_data: dict) -> np.array:
         # First date
-        first_value = warehouse_data["static_data"].get("init_stock", 0).to_numpy().reshape(1, -1)
+        if "init_stock" in warehouse_data["static_data"]:
+            first_value = warehouse_data["static_data"]["init_stock"].to_numpy().reshape(1, -1)
+        elif "init_stock" in warehouse_data["shared_data"]:
+            first_value = np.ones((1, self.skus_count)) * warehouse_data["shared_data"]["init_stock"]
+        else:
+            first_value = np.zeros((1, self.skus_count))
         # Rest dates
         rest_value = (np.ones((self.durations + self.lookback_len - 1, self.skus_count)) * np.nan)
         value = np.concatenate([first_value, rest_value])
