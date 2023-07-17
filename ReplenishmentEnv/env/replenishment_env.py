@@ -6,6 +6,7 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 import random
+import pandas as pd
 import yaml
 
 
@@ -101,7 +102,6 @@ class ReplenishmentEnv(Env):
     def load_data(self) -> None:
         self.total_data = []
         data_loader = DataLoader()
-
         # Convert the sku list from file to list. 
         if isinstance(self.config["env"]["sku_list"], str):
             self.sku_list = data_loader.load_as_list(self.config["env"]["sku_list"])
@@ -122,7 +122,8 @@ class ReplenishmentEnv(Env):
             if "static_data" in sku_config:
                 warehouse_static_data = data_loader.load_as_df(sku_config["static_data"])
             else:
-                warehouse_static_data = np.zeros((len(self.sku_list), 0))
+                warehouse_static_data = pd.DataFrame(columns=["SKU"])
+                warehouse_static_data["SKU"] = self.sku_list
 
             # Load and check demands info, which is different between different skus and will change by date
             # Demands info stored as dict = {state_item: N * D pd.DataFrame (N: agents_count, D: dates)}
@@ -160,9 +161,10 @@ class ReplenishmentEnv(Env):
 
             # Load static info
             picked_warehouse_data["static_data"] = data["static_data"]
-            assert(set(self.sku_list) <= set(list(data["static_data"]["SKU"].unique())))
-            # Remove useless sku
-            picked_warehouse_data["static_data"] = data["static_data"][data["static_data"]["SKU"].isin(self.sku_list)]
+            if "SKU" in data["static_data"]:
+                assert(set(self.sku_list) <= set(list(data["static_data"]["SKU"].unique())))
+                # Remove useless sku
+                picked_warehouse_data["static_data"] = data["static_data"][data["static_data"]["SKU"].isin(self.sku_list)]
 
             # Load and check demands info, which is different between different skus and will change by date
             # Demands info stored as dict = {state_item: N * D pd.DataFrame (N: agents_count, D: dates)}

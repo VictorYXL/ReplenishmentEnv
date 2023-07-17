@@ -10,12 +10,15 @@ from ReplenishmentEnv.wrapper.flatten_wrapper import FlattenWrapper
 from ReplenishmentEnv.wrapper.oracle_wrapper import OracleWrapper
 
 
-all = ["make_env"]
-
+all = ["make_env", "global_config_dir"]
+global_config_dir = None
 
 def make_env(config_name, wrapper_names=["DefaultWrapper"], mode="train", vis_path=None, update_config=None, config_dir=None):
     if config_dir is None:
-        config_dir = os.path.join(os.path.split(os.path.realpath(__file__))[0], "config")
+        if global_config_dir is None:
+            config_dir = os.path.join(os.path.split(os.path.realpath(__file__))[0], "config")
+        else:
+            config_dir = global_config_dir
     config_file = os.path.join(config_dir, config_name + ".yml")
     env = ReplenishmentEnv(config_file, mode, vis_path, update_config)
 

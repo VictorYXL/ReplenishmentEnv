@@ -1,4 +1,4 @@
-# This file includes 2307 skus selected from 2778 skus which selling_price >= procurement_cost * 10.5
+# This file includes 2000 skus selected from 2778 skus which selling_price >= procurement_cost * 10.5
 # Details can be found in select_price_over_cost from https://github.com/zhangchuheng123/ReplenishmentEnv/blob/data_process/select_skus.py
 SKU
 SKU0
