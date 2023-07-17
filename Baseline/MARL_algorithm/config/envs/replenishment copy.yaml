@@ -1,4 +1,4 @@
-env: "replenishment"
+env: "s"
 
 env_args:
   key: "replenishment_efficient_env-v0"

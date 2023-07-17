@@ -1,6 +1,7 @@
 from .q_learner import QLearner
 from .coma_learner import COMALearner
 from .qtran_learner import QLearner as QTranLearner
+from .qplex_learner import QLearner as QPlexLearner
 from .local_ppo_learner import LocalPPOLearner
 from .local_q_learner import LocalQLearner
 from .local_ldqn_learner import LocalLDQNLearner
@@ -11,6 +12,7 @@ from .whittle_target_learner import WhittleTargetLearner
 REGISTRY = {}
 
 REGISTRY["q_learner"] = QLearner
+REGISTRY["qplex_learner"] = QPlexLearner
 REGISTRY["coma_learner"] = COMALearner
 REGISTRY["qtran_learner"] = QTranLearner
 REGISTRY["local_ppo_learner"] = LocalPPOLearner

@@ -14,3 +14,6 @@ REGISTRY["whittle_cont"] = WhittleContinuousRunner
 
 from .parallel_runner_with_base_stock import ParallelRunnerWithBasestock
 REGISTRY["parallel_with_base_stock"] = ParallelRunnerWithBasestock
+
+from .simple_multi_echelon_episode_runner import EpisodeRunner as SimpleMultiEchelon
+REGISTRY["simple_multi_echelon"] = SimpleMultiEchelon

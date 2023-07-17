@@ -60,7 +60,12 @@ class MAPPOMAC:
             self.hidden_states = self.hidden_states.unsqueeze(0).expand(
                 batch_size, self.n_agents, -1
             )  # bav
-
+    def random_init_hidden(self, batch_size, seed):
+        self.hidden_states = self.agent.random_init_hidden(seed)
+        if self.hidden_states is not None:
+            self.hidden_states = self.hidden_states.unsqueeze(0).expand(
+                batch_size, self.n_agents, -1
+            )  # bav
     def parameters(self):
         return self.agent.parameters()
 

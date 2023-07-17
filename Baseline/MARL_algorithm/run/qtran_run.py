@@ -165,7 +165,7 @@ def run_sequential(args, logger):
         learner.cuda()
 
     if args.checkpoint_path:
-        visual_runner.mac.load_models(args.checkpoint_path, postfix = '_800')
+        visual_runner.mac.load_models(args.checkpoint_path, postfix = '_best')
         vis_save_path = os.path.join(
             args.local_results_path, args.unique_token, "vis"
         ) if os.getenv("AMLT_OUTPUT_DIR") is None else os.path.join(os.getenv("AMLT_OUTPUT_DIR"), "results", args.unique_token, "vis")

@@ -100,7 +100,7 @@ class EpisodeBatch:
             dtype = self.scheme[k].get("dtype", th.float32)
             v = th.tensor(np.array(v), dtype=dtype, device=self.device)
 
-            self._check_safe_view(v, target[k][_slices])
+            # self._check_safe_view(v, target[k][_slices])
             target[k][_slices] = v.view_as(target[k][_slices])
 
             if k in self.preprocess:
@@ -245,7 +245,7 @@ class ReplayBuffer(EpisodeBatch):
             # v = th.tensor(v, dtype=dtype, device=self.device)
             v = v.clone().detach().to(dtype=dtype, device=self.device)
 
-            self._check_safe_view(v, target[k][_slices])
+            # self._check_safe_view(v, target[k][_slices])
             target[k][_slices] = v.view_as(target[k][_slices])
 
             if k in self.preprocess:

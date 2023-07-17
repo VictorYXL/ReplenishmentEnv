@@ -288,7 +288,7 @@ class ParallelRunner:
             parent_conn.send(("get_profit", None))
         for parent_conn in self.parent_conns:
             episode_profit = parent_conn.recv()
-            episode_profits.append(episode_profit / self.t * (self.episode_limit))
+            episode_profits.append(episode_profit)
 
         # Get stats back for each env
         env_stats = []

@@ -1,12 +1,14 @@
 import numpy as np
+import copy
 
 """
     Warm up the env before action in look back length.
     In warm up process, replenish quantity will be set to last day's demand.
 """
 def replenish_by_last_demand(env) -> None:
-    _init_balance = env.balance
-    _init_per_balance = env.per_balance
+    # TODO: 为什么_init_balance没变但是_init_per_balance变了？
+    _init_balance = env.balance.copy()
+    _init_per_balance = env.per_balance.copy()
     _action_mode = env.action_mode
 
     env.action_mode = "continuous"

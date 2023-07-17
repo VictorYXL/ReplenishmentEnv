@@ -83,6 +83,7 @@ def run(_run, _config, _log):
 
 def run_sequential(args, logger):
 
+    
     # Init runner so we can get env info
     runner = r_REGISTRY[args.runner](args=args, logger=logger)
 
@@ -132,9 +133,16 @@ def run_sequential(args, logger):
     logger.console_logger.info("MDP Components:")
     print(pd.DataFrame(buffer.scheme).transpose().sort_index().fillna("").to_markdown())
 
-    # Setup multiagent controller here
+    # # Setup multiagent controller here
+    # mac_list = []
+    # for i in range(10):
+    #     mac = mac_REGISTRY[args.mac](buffer.scheme, groups, args)
+    #     mac.cuda()
+    #     mac_list.append(mac)
+    # # setup完之后才有new_batch方法，所以不得不先setup
+    # runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=None)
+    # mac = runner.find_init_mac(mac_list)
     mac = mac_REGISTRY[args.mac](buffer.scheme, groups, args)
-            
     val_args = copy.deepcopy(args)
     val_args.env_args["mode"] = "validation"
     val_runner = r_REGISTRY[args.runner](args=val_args, logger=logger)
@@ -193,12 +201,12 @@ def run_sequential(args, logger):
 
         # Step 1: Collect samples
         with torch.no_grad():
-            episode_batch, train_sttrain_old_return = runner.run(test_mode=False)
+            episode_batch, train_old_return = runner.run(test_mode=False)
             wandb_dict = {}
             wandb_dict.update({
                 'train_return_old': train_old_return,
-                'train_max_instock_sum': train_stats['max_in_stock_sum'],
-                'train_mean_in_stock_sum': train_stats['mean_in_stock_sum']
+                # 'train_max_instock_sum': train_stats['max_in_stock_sum'],
+                # 'train_mean_in_stock_sum': train_stats['mean_in_stock_sum']
             })
 
             if args.use_reward_normalization:
@@ -243,17 +251,17 @@ def run_sequential(args, logger):
             )
             last_time = time.time()
             last_test_T = runner.t_env
-            val_stats, val_lambda_return, val_old_return = \
-                val_runner.run(test_mode=True, lbda_index=0)
-            test_stats, test_lambda_return, test_old_return = \
-                test_runner.run(test_mode=True, lbda_index=0)
+            _, val_old_return = \
+                val_runner.run(test_mode=True)
+            _, test_old_return = \
+                test_runner.run(test_mode=True)
             wandb_dict.update({
                 'val_return_old': val_old_return,
-                'val_max_instock_sum': val_stats['max_in_stock_sum'],
-                'val_mean_in_stock_sum': val_stats['mean_in_stock_sum'],
+                # 'val_max_instock_sum': val_stats['max_in_stock_sum'],
+                # 'val_mean_in_stock_sum': val_stats['mean_in_stock_sum'],
                 'test_return_old': test_old_return,
-                'test_max_instock_sum': test_stats['max_in_stock_sum'],
-                'test_mean_in_stock_sum': test_stats['mean_in_stock_sum'],
+                # 'test_max_instock_sum': test_stats['max_in_stock_sum'],
+                # 'test_mean_in_stock_sum': test_stats['mean_in_stock_sum'],
             })
 
             if val_old_return > val_best_return:

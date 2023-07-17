@@ -23,7 +23,10 @@ class NRNNAgent(nn.Module):
     def init_hidden(self):
         # make hidden states on same device as model
         return self.fc1.weight.new(1, self.args.hidden_dim).zero_()
-
+    def random_init_hidden(self, seed):
+        torch.manual_seed(seed)
+        return nn.init.normal(self.fc1.weight.new(1, self.args.hidden_dim), mean=0.0, std=0.01)
+        # return self.fc1.weight.new(1, self.args.hidden_dim)
     def forward(self, inputs, hidden_state):
 
         # Batch x Agents x Dim_state

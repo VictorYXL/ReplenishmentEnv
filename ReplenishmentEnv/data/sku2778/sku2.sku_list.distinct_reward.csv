@@ -1,0 +1,5 @@
+# This file includes 50 skus selected from sku2307 with smallest relative std (np.std(df[sku]) / np.average(df[sku]))
+# Details can be found in select_smooth from https://github.com/zhangchuheng123/ReplenishmentEnv/blob/data_process/select_skus.py
+SKU
+SKU41
+SKU232

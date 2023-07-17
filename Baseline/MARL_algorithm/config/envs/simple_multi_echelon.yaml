@@ -1,0 +1,14 @@
+env: "simple_multi_echelon"
+
+env_args:
+  echelon_num: 8
+  embedding_dim: 6
+  seed: 101
+  # 这些参数其实没有用，但是需要
+  map_name: "sku200.2_stores.standard" 
+  key: "replenishment_efficient_env-v0"
+  n_agents: 2
+  task_type: "sku200.2_stores.standard"
+  mode: train
+  time_limit: 2
+  reward: "reward2"
