@@ -149,7 +149,7 @@ def run_sequential(args, logger):
     test_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
 
     if args.visualize:
-        visual_runner = r_REGISTRY["episode"](args=args, logger=logger)
+        visual_runner = r_REGISTRY["episode"](args=test_args, logger=logger)
         visual_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
 
     # Learner
