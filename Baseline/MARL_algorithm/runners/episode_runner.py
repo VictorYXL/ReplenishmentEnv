@@ -94,7 +94,7 @@ class EpisodeRunner:
 
         # Select actions in the last stored state
         if self.args.mac == "mappo_mac":
-                actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
+            actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
         elif self.args.mac == "dqn_mac" or self.args.mac == "ldqn_mac":
             actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, 
                 lbda_indices=None, test_mode=test_mode)
