@@ -153,7 +153,7 @@ def run_sequential(args, logger):
     test_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac, set_stock_levels = runner.set_stock_levels)
 
     if args.visualize:
-        visual_runner = r_REGISTRY["episode_with_base_stock"](args=args, logger=logger)
+        visual_runner = r_REGISTRY["episode_with_base_stock"](args=test_args, logger=logger)
         visual_runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac, set_stock_levels = runner.set_stock_levels)
 
     # Learner

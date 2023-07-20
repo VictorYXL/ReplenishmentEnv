@@ -93,7 +93,11 @@ class EpisodeRunner:
         self.batch.update(last_data, ts=self.t)
 
         # Select actions in the last stored state
-        actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
+        if self.args.mac == "mappo_mac":
+            actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
+        elif self.args.mac == "dqn_mac" or self.args.mac == "ldqn_mac":
+            actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, 
+                lbda_indices=None, test_mode=test_mode)
         self.batch.update({"actions": actions[0].reshape(-1).to('cpu').detach()}, ts=self.t)
 
         if not test_mode:
